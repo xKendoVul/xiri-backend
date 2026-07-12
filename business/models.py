@@ -27,6 +27,23 @@ class Food_Collection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     food = models.ForeignKey(Food, on_delete=models.CASCADE)
     complete = models.BooleanField(default=False)
+    registered_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'food_collection'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.food.name}"
+
+class BusinessQualification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    business = models.ForeignKey(Business, on_delete=models.CASCADE)
+    qualification = models.IntegerField
+    comment = models.TextField(blank=True, null=True)
+    creation_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "business_qualification"
+
+    def __str__(self):
+        return f"{self.user.username} in {self.business.name} ({self.qualification})"
