@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'cors_headers',
+    'corsheaders',
     'users',
     'gastronomy',
     'business'
@@ -129,5 +129,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# para trabajar con expo despues, ojo josue
+CORS_ALLOW_ALL_ORIGINS = True
+
 # Modelo que django autentica, ojo piojo josue
-AUTH_USER_MODEL = 'usuarios.Usuario'
+AUTH_USER_MODEL = 'users.User'
