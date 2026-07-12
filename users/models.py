@@ -20,9 +20,9 @@ class User(AbstractUser):
 
 class VerificationRequest(models.Model):
     STATE_CHOICES = [
-        ('pendiente', 'Pendiente'),
-        ('aprobado', 'Aprobado'),
-        ('rechazado', 'Rechazado'),
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('denegated', 'Denegated'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='request')
