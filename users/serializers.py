@@ -1,7 +1,22 @@
 from rest_framework import serializers
 from .models import User
 
-class UserSerializer(serializers.ModelSerializer):
+class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = "__all__"
+        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'contact_number', 'country', 'rol']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            contact_number=validated_data.get('contact_number', ''),
+            country=validated_data.get('country', 'Nicaragua'),
+            rol=validated_data.get('rol', 'explorador')
+        )
+        return user
