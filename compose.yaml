@@ -1,0 +1,9 @@
+services:
+  notas:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: "12345678"
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    command: -p 5432
