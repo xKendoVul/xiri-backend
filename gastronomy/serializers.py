@@ -8,5 +8,5 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 class FoodSerializer(serializers.ModelSerializer):
     class Meta:
-        model: Food
+        model = Food
         fields = "__all__"

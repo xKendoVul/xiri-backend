@@ -16,7 +16,7 @@ class Department(models.Model):
 
 class Food(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField
+    description = models.TextField()
     image = models.ImageField(upload_to='platillos/')
     cultural_origin = models.TextField()
     department_origin = models.ForeignKey(Department, on_delete=models.RESTRICT)
