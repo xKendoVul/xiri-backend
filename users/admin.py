@@ -23,7 +23,7 @@ class VerificationRequestAdmin(admin.ModelAdmin):
                 validation.check_by = request.user
                 validation.save()
 
-                user = request.user
+                user = validation.user
                 user.rol = 'owner'
                 user.save()
 

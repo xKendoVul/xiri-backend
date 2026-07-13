@@ -17,6 +17,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             contact_number=validated_data.get('contact_number', ''),
             country=validated_data.get('country', 'Nicaragua'),
-            rol=validated_data.get('rol', 'explorador')
+            rol=validated_data.get('rol', 'user')
         )
         return user

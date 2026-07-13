@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Department, Food
+from .models import Department, Food, GastronomicRoute
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,4 +9,9 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class FoodSerializer(serializers.ModelSerializer):
     class Meta:
         model: Food
+        fields = "__all__"
+
+class GastronomicRouteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GastronomicRoute
         fields = "__all__"

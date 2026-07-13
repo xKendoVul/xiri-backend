@@ -1,7 +1,5 @@
 from django.db import models
 
-# Create your models here.
-
 class Department(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -16,7 +14,7 @@ class Department(models.Model):
 
 class Food(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField
+    description = models.TextField()
     image = models.ImageField(upload_to='platillos/')
     cultural_origin = models.TextField()
     department_origin = models.ForeignKey(Department, on_delete=models.RESTRICT)
@@ -30,7 +28,7 @@ class GastronomicRoute(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
 
     class Meta:
-        db_table = 'gatronomic_route'
+        db_table = 'gastronomic_route'
 
     def __str__(self):
         return self.name
