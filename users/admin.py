@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import User, VerificationRequest
+from business.models import Business
 
 class PersonalisedUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'first_name', 'last_name', 'rol', 'is_staff')
@@ -17,16 +18,30 @@ class VerificationRequestAdmin(admin.ModelAdmin):
     actions = ['approve_requests']
 
     def approve_requests(self, request, queryset):
+        approved_count = 0
         for validation in queryset:
             if validation.state == 'pending':
-                validation.state = 'approved'
-                validation.check_by = request.user
-                validation.save()
-
-                user = request.user
+                #Cambiar rol del usuario a owner
+                user = validation.user
                 user.rol = 'owner'
                 user.save()
 
-        self.message_user(request, "The selected request are being approved and now the users are now owners")
+                #Crear el negocio asociado
+                Business.objects.create(
+                    name=validation.business_name,
+                    address=validation.business_address,
+                    owner=user,
+                    contact_number='',  # Se completa después en el perfil del negocio
+                    latitude=None,       # Se completa después
+                    longitude=None       # Se completa después
+                )
+
+                #Marcar la solicitud como aprobada
+                validation.state = 'approved'
+                validation.check_by = request.user
+                validation.save()
+                approved_count += 1
+
+        self.message_user(request, f"{approved_count} solicitud(s) aprobada(s). Los usuarios ahora son owners y sus negocios fueron creados.")
 
     approve_requests.short_description = "Mark like approved and promote users to owners"
