@@ -15,8 +15,8 @@ class Business(models.Model):
             )]
         )
     address = models.CharField(max_length=255)
-    latitude = models.DecimalField(max_digits=11, decimal_places=6)
-    longitude = models.DecimalField(max_digits=11, decimal_places=6)
+    latitude = models.DecimalField(max_digits=11, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=11, decimal_places=6, null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class Meta:

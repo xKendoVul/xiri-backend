@@ -7,7 +7,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from gastronomy.models import RouteBusiness
 from users.permissions import IsAdminUserRole, IsOwnerOrAdmin
 from .models import Business, BusinessQualification, Menu, Food_Collection
-from .serializers import BusinessQualificationSerializer, BusinessSerializer, MenuSerializer, FoodCollectionSerializer
+from .serializers import BusinessQualificationSerializer, BusinessSerializer, MenuSerializer, FoodCollectionSerializer, RouteBusinessSerializer
 
 class BusinessViewSet(viewsets.ModelViewSet):
     queryset = Business.objects.all()
