@@ -17,6 +17,7 @@ class FoodCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Food_Collection
         fields = "__all__"
+        read_only_fields = ['user']  ##permiso de nuevo
 
 class BusinessQualificationSerializer(serializers.ModelSerializer):
     evidence_image = serializers.ImageField(required=True, allow_null=False, allow_empty_file=False)
