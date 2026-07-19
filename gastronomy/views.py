@@ -14,6 +14,17 @@ class FoodViewSet(viewsets.ModelViewSet):
     serializer_class = FoodSerializer
     permission_classes = [IsAdminUserRole]
 
+
+##permiso Hadyi, tambien ocupaba editar aqui para poder filtrar correctamente las comidas por departamento en el Expo
+    def get_queryset(self):
+        queryset = Food.objects.all()
+        department_origin = self.request.query_params.get('department_origin')
+
+        if department_origin:
+            queryset = queryset.filter(department_origin_id=department_origin)
+
+        return queryset
+
 class GastronomicRouteViewSet(viewsets.ModelViewSet):
     queryset = GastronomicRoute.objects.all()
     serializer_class = GastronomicRouteSerializer
