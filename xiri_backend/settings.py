@@ -138,3 +138,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Modelo que django autentica, ojo piojo josue
 AUTH_USER_MODEL = 'users.User'
+
+# Django REST Framework...permiso ocupaba editar esto Hadyi 🫩
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
