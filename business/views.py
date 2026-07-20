@@ -30,6 +30,16 @@ class MenuViewSet(viewsets.ModelViewSet):
     queryset = Menu.objects.all()
     serializer_class = MenuSerializer
 
+##permiso, ocupaba editar aqui para poder filtrar los negocios...
+    def get_queryset(self):
+        queryset = Menu.objects.all()
+        business = self.request.query_params.get('business')
+
+        if business:
+            queryset = queryset.filter(business_id=business)
+
+        return queryset
+
 class FoodCollectionViewSet(viewsets.ModelViewSet):
     queryset = Food_Collection.objects.all()
     serializer_class = FoodCollectionSerializer
