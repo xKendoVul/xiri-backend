@@ -21,10 +21,11 @@ class FoodCollectionSerializer(serializers.ModelSerializer):
 
 class BusinessQualificationSerializer(serializers.ModelSerializer):
     evidence_image = serializers.ImageField(required=True, allow_null=False, allow_empty_file=False)
+    username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
         model = BusinessQualification
-        fields = ['id', 'business', 'qualification', 'comment', 'evidence_image', 'creation_date']
+        fields = ['id', 'user', 'username', 'business', 'qualification', 'comment', 'evidence_image', 'creation_date']
         read_only_fields = ['user', 'creation_date']
 
     def validate_qualification(self, value):
