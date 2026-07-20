@@ -64,6 +64,12 @@ class BusinessQualificationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        business_id = self.request.query_params.get('business')
+
+        # Si filtra por negocio, devolver todas las calificaciones de ese negocio
+        if business_id:
+            return BusinessQualification.objects.filter(business_id=business_id)
+
         if user.is_superuser or user.rol == 'admin':
             return BusinessQualification.objects.all()
 
