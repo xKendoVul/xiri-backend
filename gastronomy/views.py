@@ -1,8 +1,12 @@
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
 from users.permissions import IsAdminUserRole
-from .models import Department, Food, GastronomicRoute
-from .serializers import DepartmentSerializer, FoodSerializer, GastronomicRouteSerializer
+from .models import Department, TraditionalFood, GastronomicRoute, Food_Collection
+from .serializers import (
+    DepartmentSerializer, TraditionalFoodSerializer, 
+    GastronomicRouteSerializer, FoodCollectionSerializer
+)
 
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.all()
@@ -10,9 +14,25 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUserRole]
 
 class FoodViewSet(viewsets.ModelViewSet):
-    queryset = Food.objects.all()
-    serializer_class = FoodSerializer
+    queryset = TraditionalFood.objects.all()
+    serializer_class = TraditionalFoodSerializer
     permission_classes = [IsAdminUserRole]
+
+class FoodCollectionViewSet(viewsets.ModelViewSet):
+    queryset = Food_Collection.objects.all()
+    serializer_class = FoodCollectionSerializer
+    permission_classes = [IsAuthenticated]
+
+    "Solo la coleccion del usuario en cuestion"
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser or user.rol == 'admin':
+            return Food_Collection.objects.all()
+        return Food_Collection.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        "asignacion de usuario autenticado"
+        serializer.save(user=self.request.user)
 
 class GastronomicRouteViewSet(viewsets.ModelViewSet):
     queryset = GastronomicRoute.objects.all()

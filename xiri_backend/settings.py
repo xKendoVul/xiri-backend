@@ -54,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -133,8 +134,18 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# para trabajar con expo despues, ojo josue
+# CORS para Expo
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Modelo que django autentica, ojo piojo josue
+# REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+# Modelo que django autentica
 AUTH_USER_MODEL = 'users.User'
