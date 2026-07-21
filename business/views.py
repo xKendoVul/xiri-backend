@@ -132,6 +132,21 @@ class MenuViewSet(viewsets.ModelViewSet):
     serializer_class = MenuSerializer
     permission_classes = [IsOwnerOrAdmin]
 
+
+    def get_queryset(self):
+        queryset = Menu.objects.all()
+        business = self.request.query_params.get('business')
+
+        if business:
+            queryset = queryset.filter(business_id=business)
+
+        return queryset
+
+class FoodCollectionViewSet(viewsets.ModelViewSet):
+    queryset = Food_Collection.objects.all()
+    serializer_class = FoodCollectionSerializer
+    permission_classes = [IsAuthenticated]
+    
     def perform_create(self, serializer):
         business = serializer.validated_data.get('business')
         if business and business.owner != self.request.user:
@@ -156,6 +171,12 @@ class BusinessQualificationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        business_id = self.request.query_params.get('business')
+
+        # Si filtra por negocio, devolver todas las calificaciones de ese negocio
+        if business_id:
+            return BusinessQualification.objects.filter(business_id=business_id)
+
         if user.is_superuser or user.rol == 'admin':
             return BusinessQualification.objects.select_related('user', 'business').all()
         return BusinessQualification.objects.select_related('user', 'business').filter(
