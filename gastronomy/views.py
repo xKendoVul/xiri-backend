@@ -23,25 +23,14 @@ class FoodCollectionViewSet(viewsets.ModelViewSet):
     serializer_class = FoodCollectionSerializer
     permission_classes = [IsAuthenticated]
 
-    "Solo la coleccion del usuario en cuestion"
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser or user.rol == 'admin':
-            return Food_Collection.objects.all()
-        return Food_Collection.objects.filter(user=user)
+            return Food_Collection.objects.select_related('user', 'traditional_food').all()
+        return Food_Collection.objects.select_related('user', 'traditional_food').filter(user=user)
 
     def perform_create(self, serializer):
-        "asignacion de usuario autenticado"
         serializer.save(user=self.request.user)
-
-    def get_queryset(self):
-        queryset = Food.objects.all()
-        department_origin = self.request.query_params.get('department_origin')
-
-        if department_origin:
-            queryset = queryset.filter(department_origin_id=department_origin)
-
-        return queryset
 
 class GastronomicRouteViewSet(viewsets.ModelViewSet):
     queryset = GastronomicRoute.objects.all()

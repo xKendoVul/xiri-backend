@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import BusinessViewSet, MenuViewSet, FoodCollectionViewSet, RouteBusinessViewSet, BusinessQualificationViewSet, BusinessMenuItemViewSet
+from .views import BusinessViewSet, MenuViewSet, RouteBusinessViewSet, BusinessQualificationViewSet, BusinessMenuItemViewSet
 
 router = DefaultRouter()
 router.register(r'business', BusinessViewSet)

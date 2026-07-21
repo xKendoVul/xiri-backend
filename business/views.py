@@ -14,6 +14,7 @@ from .serializers import (
     RouteBusinessSerializer
 )
 
+
 class BusinessViewSet(viewsets.ModelViewSet):
     queryset = Business.objects.all()
     serializer_class = BusinessSerializer
@@ -74,7 +75,6 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrAdmin]
 
     def perform_create(self, serializer):
-        # Verificar que el usuario es owner del negocio
         business = serializer.validated_data.get('business')
         if business and business.owner != self.request.user:
             if self.request.user.rol != 'admin' and not self.request.user.is_superuser:
@@ -85,7 +85,6 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser or user.rol == 'admin':
             return BusinessMenuItem.objects.select_related('business', 'traditional_food').all()
-        # Owners ven solo sus items
         return BusinessMenuItem.objects.select_related('business', 'traditional_food').filter(
             business__owner=user
         )
@@ -132,21 +131,6 @@ class MenuViewSet(viewsets.ModelViewSet):
     serializer_class = MenuSerializer
     permission_classes = [IsOwnerOrAdmin]
 
-
-    def get_queryset(self):
-        queryset = Menu.objects.all()
-        business = self.request.query_params.get('business')
-
-        if business:
-            queryset = queryset.filter(business_id=business)
-
-        return queryset
-
-class FoodCollectionViewSet(viewsets.ModelViewSet):
-    queryset = Food_Collection.objects.all()
-    serializer_class = FoodCollectionSerializer
-    permission_classes = [IsAuthenticated]
-    
     def perform_create(self, serializer):
         business = serializer.validated_data.get('business')
         if business and business.owner != self.request.user:
@@ -173,7 +157,6 @@ class BusinessQualificationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         business_id = self.request.query_params.get('business')
 
-        # Si filtra por negocio, devolver todas las calificaciones de ese negocio
         if business_id:
             return BusinessQualification.objects.filter(business_id=business_id)
 
