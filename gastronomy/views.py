@@ -34,6 +34,15 @@ class FoodCollectionViewSet(viewsets.ModelViewSet):
         "asignacion de usuario autenticado"
         serializer.save(user=self.request.user)
 
+    def get_queryset(self):
+        queryset = Food.objects.all()
+        department_origin = self.request.query_params.get('department_origin')
+
+        if department_origin:
+            queryset = queryset.filter(department_origin_id=department_origin)
+
+        return queryset
+
 class GastronomicRouteViewSet(viewsets.ModelViewSet):
     queryset = GastronomicRoute.objects.all()
     serializer_class = GastronomicRouteSerializer
