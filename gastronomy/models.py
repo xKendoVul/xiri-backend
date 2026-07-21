@@ -1,5 +1,7 @@
 from django.db import models
 
+from users.models import User
+
 class Department(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -12,15 +14,29 @@ class Department(models.Model):
     def __str__(self):
         return self.name
 
-class Food(models.Model):
+class TraditionalFood(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     image = models.ImageField(upload_to='platillos/')
     cultural_origin = models.TextField()
     department_origin = models.ForeignKey(Department, on_delete=models.RESTRICT)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'foods'
+        db_table = 'traditional_foods'
+
+class Food_Collection(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    traditional_food = models.ForeignKey(TraditionalFood, on_delete=models.CASCADE)
+    complete = models.BooleanField(default=False)
+    registered_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'food_collection'
+        unique_together = ['user', 'traditional_food']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.traditional_food.name}"
 
 class GastronomicRoute(models.Model):
     name = models.CharField(max_length=255)
@@ -32,18 +48,3 @@ class GastronomicRoute(models.Model):
 
     def __str__(self):
         return self.name
-
-class RouteBusiness(models.Model):
-    route = models.ForeignKey(GastronomicRoute, on_delete=models.CASCADE)
-    business = models.ForeignKey('business.Business', on_delete=models.CASCADE)
-    suggested_order = models.IntegerField() # Orden que lleva la ruta
-
-    class Meta:
-        db_table = 'route_business'
-        ordering = ['suggested_order']
-        constraints = [
-            models.UniqueConstraint(fields=['route', 'business'], name='uq_route_business')
-        ]
-
-    def __str__(self):
-        return f"{self.route.name} - {self.business.name} (Order #{self.suggested_order})"

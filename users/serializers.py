@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, VerificationRequest
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -20,3 +20,29 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             rol=validated_data.get('rol', 'user')
         )
         return user
+
+
+class VerificationRequestSerializer(serializers.ModelSerializer):
+    """
+    Serializer para solicitudes de verificación de owners.
+    
+    - Usuarios normales pueden CREAR solicitudes (POST)
+    - Usuarios normales ven SOLO sus propias solicitudes (GET)
+    - Admins ven TODAS las solicitudes y pueden cambiar estado
+    """
+    username = serializers.CharField(source='user.username', read_only=True)
+    state_display = serializers.CharField(source='get_state_display', read_only=True)
+    
+    class Meta:
+        model = VerificationRequest
+        fields = [
+            'id', 'user', 'username', 'business_name', 'business_address',
+            'id_card_number', 'identity_document', 'state', 'state_display',
+            'request_date', 'check_by', 'reviews'
+        ]
+        read_only_fields = ['user', 'state', 'request_date', 'check_by']
+
+    def create(self, validated_data):
+        """El usuario autenticado se asigna automáticamente."""
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
