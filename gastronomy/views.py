@@ -18,6 +18,16 @@ class FoodViewSet(viewsets.ModelViewSet):
     serializer_class = TraditionalFoodSerializer
     permission_classes = [IsAdminUserRole]
 
+    ## Hadyi recorda que deje esto para filtrar por departamento...
+    def get_queryset(self): 
+        queryset = TraditionalFood.objects.all()
+        department_origin = self.request.query_params.get('department_origin')
+
+        if department_origin:
+            queryset = queryset.filter(department_origin_id=department_origin)
+
+        return queryset
+
 class FoodCollectionViewSet(viewsets.ModelViewSet):
     queryset = Food_Collection.objects.all()
     serializer_class = FoodCollectionSerializer
