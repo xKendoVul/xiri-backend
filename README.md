@@ -259,6 +259,11 @@ Usa las credenciales del superusuario o de `admin/admin123` si ejecutaste `creat
 
 ---
 
+Lo siguiente es preparar el frontend en expo, descripcion en el repo en cuestion
+Frontend: https://github.com/josueespinoza2004/xiri-frontend
+
+---
+
 ## 📝 API Documentation
 
 La API sigue los principios REST:
