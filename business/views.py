@@ -140,11 +140,17 @@ class MenuViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Menu.objects.select_related('business', 'menu_item').all()
+
+        # Filtro por negocio
+        business_id = self.request.query_params.get('business')
+        if business_id:
+            queryset = queryset.filter(business_id=business_id)
+            return queryset
+
         if user.is_superuser or user.rol == 'admin':
-            return Menu.objects.select_related('business', 'menu_item').all()
-        return Menu.objects.select_related('business', 'menu_item').filter(
-            business__owner=user
-        )
+            return queryset
+        return queryset.filter(business__owner=user)
 
 
 class BusinessQualificationViewSet(viewsets.ModelViewSet):
