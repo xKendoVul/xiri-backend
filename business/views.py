@@ -83,11 +83,16 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = BusinessMenuItem.objects.select_related('business', 'traditional_food').all()
+
+        business_id = self.request.query_params.get('business')
+        if business_id:
+            queryset = queryset.filter(business_id=business_id)
+            return queryset
+
         if user.is_superuser or user.rol == 'admin':
-            return BusinessMenuItem.objects.select_related('business', 'traditional_food').all()
-        return BusinessMenuItem.objects.select_related('business', 'traditional_food').filter(
-            business__owner=user
-        )
+            return queryset
+        return queryset.filter(business__owner=user)
 
     @action(detail=True, methods=['patch'], permission_classes=[IsAdminUserRole])
     def validate_for_album(self, request, pk=None):
@@ -140,11 +145,16 @@ class MenuViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Menu.objects.select_related('business', 'menu_item').all()
+
+        business_id = self.request.query_params.get('business')
+        if business_id:
+            queryset = queryset.filter(business_id=business_id)
+            return queryset
+
         if user.is_superuser or user.rol == 'admin':
-            return Menu.objects.select_related('business', 'menu_item').all()
-        return Menu.objects.select_related('business', 'menu_item').filter(
-            business__owner=user
-        )
+            return queryset
+        return queryset.filter(business__owner=user)
 
 
 class BusinessQualificationViewSet(viewsets.ModelViewSet):
