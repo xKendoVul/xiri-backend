@@ -27,6 +27,11 @@ class BusinessViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+
+        # permisito
+        if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return Business.objects.all()
+
         if user.is_superuser or user.rol == 'admin':
             return Business.objects.all()
         return Business.objects.filter(owner=user)
