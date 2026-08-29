@@ -28,6 +28,11 @@ class BusinessViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        # Filtro para que el owner vea solo sus negocios
+        owner_filter = self.request.query_params.get('owner')
+        if owner_filter == 'me':
+            return Business.objects.filter(owner=user)
+
         # permisito
         if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
             return Business.objects.all()
