@@ -36,7 +36,7 @@ class VerificationRequest(models.Model):
   business_address = models.CharField(max_length=255)
   id_card_number = models.CharField(max_length=15)
   identity_document = models.ImageField(upload_to='documents/id_cards')
-  state = models.CharField(max_length=20, choices=STATE_CHOICES, default='pendiente')
+  state = models.CharField(max_length=20, choices=STATE_CHOICES, default='pending')
   request_date = models.DateTimeField(auto_now_add=True)
   check_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='auditorias')
   reviews = models.TextField(blank=True, null=True)
