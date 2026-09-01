@@ -7,7 +7,6 @@ class User(AbstractUser):
     ('user', 'User / Explorador'),
     ('owner', 'Owner / Comerciante'),
     ('admin', 'Administrador'),
-    ('auditor', 'Auditor de Negocios'),
   ]
   phone_regex = RegexValidator(
     regex=r'^\+?1?\d{8,15}$',
@@ -28,7 +27,7 @@ class VerificationRequest(models.Model):
   STATE_CHOICES = [
     ('pending', 'Pending'),
     ('approved', 'Approved'),
-    ('denegated', 'Denegated'),
+    ('rejected', 'Rejected'),
   ]
 
   user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='request')

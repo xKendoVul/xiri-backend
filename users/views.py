@@ -136,7 +136,7 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
         
         reviews = request.data.get('reviews', '')
         
-        verification_request.state = 'denegated'
+        verification_request.state = 'rejected'
         verification_request.check_by = request.user
         verification_request.reviews = reviews
         verification_request.save()

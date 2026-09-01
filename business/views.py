@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from django.db.models import Avg, Count
 
 from users.permissions import IsAdminUserRole, IsOwnerOrAdmin
 from .models import Business, BusinessQualification, Menu, RouteBusiness, BusinessMenuItem
@@ -16,7 +17,7 @@ from .serializers import (
 
 
 class BusinessViewSet(viewsets.ModelViewSet):
-    queryset = Business.objects.all()
+    queryset = Business.objects.select_related('owner')
     serializer_class = BusinessSerializer
     permission_classes = [IsOwnerOrAdmin]
 
@@ -28,18 +29,23 @@ class BusinessViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        queryset = Business.objects.select_related('owner').annotate(
+            average_rating=Avg('businessqualification__qualification'),
+            total_reviews=Count('businessqualification')
+        )
+
         # Filtro para que el owner vea solo sus negocios
         owner_filter = self.request.query_params.get('owner')
         if owner_filter == 'me':
-            return Business.objects.filter(owner=user)
+            return queryset.filter(owner=user)
 
-        # permisito
         if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
-            return Business.objects.all()
+            return queryset
 
         if user.is_superuser or user.rol == 'admin':
-            return Business.objects.all()
-        return Business.objects.filter(owner=user)
+            return queryset
+        
+        return queryset.filter(owner=user)
 
     @action(detail=True, methods=['patch'], permission_classes=[IsOwnerOrAdmin])
     def complete_profile(self, request, pk=None):

@@ -13,7 +13,6 @@ class IsAdminUserRole(permissions.BasePermission):
 		# (POST/PUT/DELETE): solo admins
 			return request.user.rol == 'admin' or request.user.is_superuser
 
-
 class IsOwnerOrAdmin(permissions.BasePermission):
 	def has_permission(self, request, view):
 		if not request.user or not request.user.is_authenticated:
@@ -24,3 +23,9 @@ class IsOwnerOrAdmin(permissions.BasePermission):
 
 		# Solo owners o admins pueden crear/modificar
 		return request.user.rol in ['owner', 'admin'] or request.user.is_superuser
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+	def has_permission(self, request, view):
+		if request.method in permissions.SAFE_METHODS:
+			return True
+		return bool(request.user and request.user.is_authenticated and (request.user.rol == 'admin' or request.user.is_superuser))

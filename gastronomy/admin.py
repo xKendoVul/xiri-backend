@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Department, TraditionalFood, GastronomicRoute, Food_Collection
+from .models import Department, TraditionalFood, GastronomicRoute, FoodCollection
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
@@ -12,7 +12,7 @@ class FoodAdmin(admin.ModelAdmin):
     list_filter = ('department_origin',)
     search_fields = ('name', 'description')
 
-@admin.register(Food_Collection)
+@admin.register(FoodCollection)
 class FoodCollectionAdmin(admin.ModelAdmin):
     list_display = ('user', 'traditional_food', 'complete', 'registered_date')
     list_filter = ('complete', 'user')
