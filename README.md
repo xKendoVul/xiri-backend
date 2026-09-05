@@ -117,13 +117,13 @@ docker compose up -d
 docker compose ps
 ```
 
-No necesitas modificar el `.env` si usas Docker, pero si crear la base de datos "xiri_backend", las credenciales por defecto son:
+No necesitas modificar el `.env`, las credenciales por defecto son:
 
 | Variable | Valor |
 |----------|-------|
 | DB_NAME | xiri_backend |
 | DB_USER | postgres |
-| DB_PASSWORD | postgres |
+| DB_PASSWORD | 12345678 |
 | DB_HOST | localhost |
 | DB_PORT | 5432 |
 
@@ -143,13 +143,9 @@ python manage.py migrate
 
 ```bash
 # Departamentos y platillos típicos de Nicaragua
-python manage.py seed_data
+python manage.py seed_data --fresh
 
-# Usuarios de prueba
-python manage.py create_test_users
-```
-
-**Usuarios de prueba disponibles (puedes ingresar con Usuario o con Correo):**
+**Usuarios de prueba disponibles (puedes ingresar con Usuario):**
 
 | Rol | Usuario (Username) | Contraseña (Password) | Correo (Email) | Propósito / Personaje |
 |---|---|---|---|---|
