@@ -144,6 +144,7 @@ python manage.py migrate
 ```bash
 # Departamentos y platillos típicos de Nicaragua
 python manage.py seed_data --fresh
+```
 
 **Usuarios de prueba disponibles (puedes ingresar con Usuario):**
 
