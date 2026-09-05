@@ -27,7 +27,7 @@ class FoodCollectionSerializer(serializers.ModelSerializer):
         model = FoodCollection
         fields = ['id', 'user', 'traditional_food', 'food_name', 'department_name', 
                   'food_image', 'complete', 'registered_date']
-        read_only_fields = ['user', 'registered_date']
+        read_only_fields = ['user', 'registered_date', 'complete']
 
 
 class GastronomicRouteSerializer(serializers.ModelSerializer):

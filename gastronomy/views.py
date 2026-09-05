@@ -18,6 +18,15 @@ class FoodViewSet(viewsets.ModelViewSet):
     serializer_class = TraditionalFoodSerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    def get_queryset(self):
+        queryset = TraditionalFood.objects.select_related('department_origin').all()
+        dept = self.request.query_params.get('department_origin') or self.request.query_params.get('department')
+
+        if dept:
+            queryset = queryset.filter(department_origin_id=dept)
+
+        return queryset
+
 class FoodCollectionViewSet(viewsets.ModelViewSet):
     queryset = FoodCollection.objects.all()
     serializer_class = FoodCollectionSerializer

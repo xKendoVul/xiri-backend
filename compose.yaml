@@ -1,9 +1,16 @@
 services:
-  notas:
-    image: postgres:18
+  db:
+    image: postgres:16-alpine
+    container_name: xiri_postgres
+    restart: always
     environment:
-      POSTGRES_PASSWORD: "12345678"
+      POSTGRES_DB: xiri_backend
       POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-12345678}
     ports:
       - "5432:5432"
-    command: -p 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+volumes:
+  postgres_data:

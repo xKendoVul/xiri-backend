@@ -9,6 +9,7 @@ from django.db.models import Avg, Count
 
 from users.permissions import IsAdminUserRole, IsOwnerOrAdmin
 from .models import Business, BusinessQualification, Menu, RouteBusiness, BusinessMenuItem
+from gastronomy.models import FoodCollection
 from .serializers import (
     BusinessQualificationSerializer, BusinessSerializer, 
     BusinessMenuItemSerializer, MenuSerializer, 
@@ -101,14 +102,16 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = BusinessMenuItem.objects.select_related('business', 'traditional_food').all()
 
-        business_id = self.request.query_params.get('business')
-        if business_id:
-            queryset = queryset.filter(business_id=business_id)
+        if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
+            business_id = self.request.query_params.get('business')
+            if business_id:
+                return queryset.filter(business_id=business_id)
             return queryset
 
         if user.is_superuser or user.rol == 'admin':
             return queryset
-        return queryset.filter(business__owner=user)
+
+        return queryset.filter(business__owner = user)
 
     @action(detail=True, methods=['patch'], permission_classes=[IsAdminUserRole])
     def validate_for_album(self, request, pk=None):
@@ -193,7 +196,21 @@ class BusinessQualificationViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        qualification = serializer.save(user=self.request.user)
+        user = self.request.user
+        business = qualification.business
+
+        menu_items = business.menu_items.filter(
+            models.Q(traditional_food__isnull=False) | models.Q(is_traditional_variant=True)
+        ).select_related('traditional_food')
+
+        for item in menu_items:
+            if item.traditional_food:
+                FoodCollection.objects.update_or_create(
+                    user=user,
+                    traditional_food=item.traditional_food,
+                    defaults={'complete': True}
+                )
 
 
 class RouteBusinessViewSet(viewsets.ModelViewSet):

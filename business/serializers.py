@@ -28,7 +28,7 @@ class BusinessMenuItemSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BusinessMenuItem
-        fields = ['id', 'name', 'description', 'image', 'business', 'business_name',
+        fields = ['id', 'name', 'description', 'price', 'image', 'business', 'business_name',
                   'traditional_food', 'traditional_food_name', 'is_traditional_variant', 
                   'counts_for_album', 'created_at']
         read_only_fields = ['created_at']

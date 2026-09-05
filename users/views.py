@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes as perm_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from .serializers import UserRegisterSerializer, VerificationRequestSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db import transaction
@@ -46,6 +47,7 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
     serializer_class = VerificationRequestSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    http_method_names = ['get', 'post', 'head', 'options']
 
     def get_queryset(self):
         user = self.request.user
@@ -55,7 +57,15 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
         return VerificationRequest.objects.select_related('user').filter(user=user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+
+        if user.rol in ['owner', 'admin'] and not user.is_superuser:
+            raise ValidationError({"error": "Ya posees un rol de admin o administrador"})
+
+        if VerificationRequest.objects.filter(user=user, state='pending').exists():
+            raise ValidationError({"error": "ya tienes una solicitud de verificacion en revision"})
+
+        serializer.save(user=user)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def approve(self, request, pk=None):
