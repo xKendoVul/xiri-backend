@@ -25,7 +25,10 @@ class TraditionalFood(models.Model):
     class Meta:
         db_table = 'traditional_foods'
 
-class Food_Collection(models.Model):
+    def __str__(self):
+        return self.name
+
+class FoodCollection(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     traditional_food = models.ForeignKey(TraditionalFood, on_delete=models.CASCADE)
     complete = models.BooleanField(default=False)

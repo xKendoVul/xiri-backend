@@ -1,13 +1,15 @@
 from django.contrib.auth import PermissionDenied
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from django.db import models
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from django.db.models import Avg, Count
 
 from users.permissions import IsAdminUserRole, IsOwnerOrAdmin
 from .models import Business, BusinessQualification, Menu, RouteBusiness, BusinessMenuItem
+from gastronomy.models import FoodCollection
 from .serializers import (
     BusinessQualificationSerializer, BusinessSerializer, 
     BusinessMenuItemSerializer, MenuSerializer, 
@@ -16,7 +18,7 @@ from .serializers import (
 
 
 class BusinessViewSet(viewsets.ModelViewSet):
-    queryset = Business.objects.all()
+    queryset = Business.objects.select_related('owner')
     serializer_class = BusinessSerializer
     permission_classes = [IsOwnerOrAdmin]
 
@@ -27,9 +29,29 @@ class BusinessViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+
+        queryset = Business.objects.select_related('owner').annotate(
+            average_rating=Avg('businessqualification__qualification'),
+            total_reviews=Count('businessqualification')
+        )
+
+        # Filtro para que el owner vea solo sus negocios
+        owner_filter = self.request.query_params.get('owner')
+        if owner_filter == 'me':
+            return queryset.filter(owner=user)
+
+        # Filtro por platillo tradicional asociado
+        traditional_food_id = self.request.query_params.get('traditional_food')
+        if traditional_food_id:
+            queryset = queryset.filter(menu_items__traditional_food_id=traditional_food_id).distinct()
+
+        if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return queryset
+
         if user.is_superuser or user.rol == 'admin':
-            return Business.objects.all()
-        return Business.objects.filter(owner=user)
+            return queryset
+        
+        return queryset.filter(owner=user)
 
     @action(detail=True, methods=['patch'], permission_classes=[IsOwnerOrAdmin])
     def complete_profile(self, request, pk=None):
@@ -79,15 +101,41 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
         if business and business.owner != self.request.user:
             if self.request.user.rol != 'admin' and not self.request.user.is_superuser:
                 raise PermissionDenied("Solo puedes agregar platillos a tus propios negocios")
-        serializer.save()
+        item = serializer.save()
+        # Sincronizar automáticamente con la tabla Menu
+        Menu.objects.update_or_create(
+            business=item.business,
+            menu_item=item,
+            defaults={'price': item.price}
+        )
+
+    def perform_update(self, serializer):
+        item = serializer.save()
+        Menu.objects.update_or_create(
+            business=item.business,
+            menu_item=item,
+            defaults={'price': item.price}
+        )
 
     def get_queryset(self):
         user = self.request.user
+        queryset = BusinessMenuItem.objects.select_related('business', 'traditional_food').all()
+
+        if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
+            business_id = self.request.query_params.get('business')
+            if business_id:
+                queryset = queryset.filter(business_id=business_id)
+
+            traditional_food_id = self.request.query_params.get('traditional_food')
+            if traditional_food_id:
+                queryset = queryset.filter(traditional_food_id=traditional_food_id)
+
+            return queryset
+
         if user.is_superuser or user.rol == 'admin':
-            return BusinessMenuItem.objects.select_related('business', 'traditional_food').all()
-        return BusinessMenuItem.objects.select_related('business', 'traditional_food').filter(
-            business__owner=user
-        )
+            return queryset
+
+        return queryset.filter(business__owner = user)
 
     @action(detail=True, methods=['patch'], permission_classes=[IsAdminUserRole])
     def validate_for_album(self, request, pk=None):
@@ -140,11 +188,16 @@ class MenuViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Menu.objects.select_related('business', 'menu_item').all()
+
+        business_id = self.request.query_params.get('business')
+        if business_id:
+            queryset = queryset.filter(business_id=business_id)
+            return queryset
+
         if user.is_superuser or user.rol == 'admin':
-            return Menu.objects.select_related('business', 'menu_item').all()
-        return Menu.objects.select_related('business', 'menu_item').filter(
-            business__owner=user
-        )
+            return queryset
+        return queryset.filter(business__owner=user)
 
 
 class BusinessQualificationViewSet(viewsets.ModelViewSet):
@@ -167,7 +220,21 @@ class BusinessQualificationViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        qualification = serializer.save(user=self.request.user)
+        user = self.request.user
+        business = qualification.business
+
+        menu_items = business.menu_items.filter(
+            models.Q(traditional_food__isnull=False) | models.Q(is_traditional_variant=True)
+        ).select_related('traditional_food')
+
+        for item in menu_items:
+            if item.traditional_food:
+                FoodCollection.objects.update_or_create(
+                    user=user,
+                    traditional_food=item.traditional_food,
+                    defaults={'complete': True}
+                )
 
 
 class RouteBusinessViewSet(viewsets.ModelViewSet):

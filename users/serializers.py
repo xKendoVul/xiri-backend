@@ -1,12 +1,18 @@
+from django.contrib.auth.password_validation import validate_password
+from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from .models import User, VerificationRequest
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all(), message="Este correo ya esta registrado")]
+    )
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'contact_number', 'country', 'rol']
+        fields = ['id', 'username', 'email', 'password', 'first_name', 'last_name', 'contact_number', 'country']
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -17,7 +23,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             contact_number=validated_data.get('contact_number', ''),
             country=validated_data.get('country', 'Nicaragua'),
-            rol=validated_data.get('rol', 'user')
+            rol='user'
         )
         return user
 

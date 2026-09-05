@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Department, TraditionalFood, GastronomicRoute, Food_Collection
+from .models import Department, TraditionalFood, GastronomicRoute, FoodCollection
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,10 +24,10 @@ class FoodCollectionSerializer(serializers.ModelSerializer):
     food_image = serializers.ImageField(source='traditional_food.image', read_only=True)
     
     class Meta:
-        model = Food_Collection
+        model = FoodCollection
         fields = ['id', 'user', 'traditional_food', 'food_name', 'department_name', 
                   'food_image', 'complete', 'registered_date']
-        read_only_fields = ['user', 'registered_date']
+        read_only_fields = ['user', 'registered_date', 'complete']
 
 
 class GastronomicRouteSerializer(serializers.ModelSerializer):

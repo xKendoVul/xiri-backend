@@ -19,13 +19,6 @@ Backend API para aplicación móvil de turismo gastronómico en Nicaragua, gamif
 - 🗺️ **Seguir rutas** gastronómicas recomendadas
 - 📍 **Descubrir locales** con menús y precios
 
-### Sistema de Roles
-
-| Rol | Descripción |
-|-----|-------------|
-| `user` | Explorador - Puede ver catálogo y gestionar su álbum |
-| `owner` | Comerciante - Puede gestionar su(s) negocio(s) |
-| `admin` | Administrador - Control total del catálogo y validaciones |
 
 ---
 
@@ -98,13 +91,6 @@ DB_PASSWORD=tu_password_seguro
 DB_HOST=localhost
 DB_PORT=5432
 
-# Django
-DEBUG=True
-SECRET_KEY=tu-clave-secreta-muy-larga-y-aleatoria
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# - CORS (para desarrollo con Expo)
-CORS_ALLOWED_ORIGINS=http://localhost:8081
 ```
 
 ### Opción A: PostgreSQL Local
@@ -125,19 +111,19 @@ El proyecto incluye `compose.yaml` con PostgreSQL preconfigurado.
 
 ```bash
 # Iniciar PostgreSQL con Docker
-docker compose up -d postgres
+docker compose up -d
 
 # Verificar que esté corriendo
 docker compose ps
 ```
 
-No necesitas modificar el `.env` si usas Docker, las credenciales por defecto son:
+No necesitas modificar el `.env`, las credenciales por defecto son:
 
 | Variable | Valor |
 |----------|-------|
 | DB_NAME | xiri_backend |
 | DB_USER | postgres |
-| DB_PASSWORD | postgres |
+| DB_PASSWORD | 12345678 |
 | DB_HOST | localhost |
 | DB_PORT | 5432 |
 
@@ -148,6 +134,8 @@ No necesitas modificar el `.env` si usas Docker, las credenciales por defecto so
 ### 1. Aplicar migraciones
 
 ```bash
+python manage.py makemigrations
+
 python manage.py migrate
 ```
 
@@ -155,26 +143,24 @@ python manage.py migrate
 
 ```bash
 # Departamentos y platillos típicos de Nicaragua
-python manage.py seed_data
+python manage.py seed_data --fresh
 
-# Usuarios de prueba
-python manage.py create_test_users
-```
+**Usuarios de prueba disponibles (puedes ingresar con Usuario):**
 
-**Usuarios de prueba creados:**
-
-| Usuario | Contraseña | Rol |
-|---------|------------|-----|
-| admin | admin123 | Admin |
-| user1 | user123 | User |
-| user2 | user123 | User |
-| owner1 | owner123 | Owner |
-| owner2 | owner123 | Owner |
+| Rol | Usuario (Username) | Contraseña (Password) | Correo (Email) | Propósito / Personaje |
+|---|---|---|---|---|
+| **Administrador** | `admin` | `admin1234` | `admin@xiri.com` | Panel Admin / Verificaciones |
+| **Dueño de Local** | `don_pedro` | `dueno1234` | `dueno@xiri.com` | Don Pedro (Quesillos Nagarote) |
+| **Dueña de Local** | `dona_maria` | `duena1234` | `duena@xiri.com` | Doña María (Vigorón Granada) |
+| **Dueña de Local** | `dona_vilma` | `duena1234` | `vilma@xiri.com` | Doña Vilma (Quesillos La Paz Centro) |
+| **Dueño de Local** | `don_chepe` | `dueno1234` | `chepe@xiri.com` | Don Chepe (Fritanga Managua) |
+| **Turista** | `turista_juan` | `turista1234` | `turista@xiri.com` | Juan Pérez (Explorador / Colección) |
+| **Solicitante** | `carlos_aspira` | `solicitante1234` | `solicitante@xiri.com` | Carlos (Solicitud de dueño pendiente) |
 
 ### 3. Iniciar el servidor
 
 ```bash
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
 ```
 
 El servidor estará disponible en: **http://localhost:8000**
@@ -275,4 +261,4 @@ La API sigue los principios REST:
 
 ## 👥 Equipo
 
-Desarrollado con ❤️  para Nicaragua.
+Desarrollado con  ❤️  para Nicaragua.

@@ -7,7 +7,6 @@ class User(AbstractUser):
     ('user', 'User / Explorador'),
     ('owner', 'Owner / Comerciante'),
     ('admin', 'Administrador'),
-    ('auditor', 'Auditor de Negocios'),
   ]
   phone_regex = RegexValidator(
     regex=r'^\+?1?\d{8,15}$',
@@ -28,7 +27,7 @@ class VerificationRequest(models.Model):
   STATE_CHOICES = [
     ('pending', 'Pending'),
     ('approved', 'Approved'),
-    ('denegated', 'Denegated'),
+    ('rejected', 'Rejected'),
   ]
 
   user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='request')
@@ -36,7 +35,7 @@ class VerificationRequest(models.Model):
   business_address = models.CharField(max_length=255)
   id_card_number = models.CharField(max_length=15)
   identity_document = models.ImageField(upload_to='documents/id_cards')
-  state = models.CharField(max_length=20, choices=STATE_CHOICES, default='pendiente')
+  state = models.CharField(max_length=20, choices=STATE_CHOICES, default='pending')
   request_date = models.DateTimeField(auto_now_add=True)
   check_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='auditorias')
   reviews = models.TextField(blank=True, null=True)
