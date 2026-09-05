@@ -1,5 +1,8 @@
 """
-Command para poblar la base de datos con datos de prueba completos de Nicaragua.
+Command para poblar la base de datos con datos de prueba completos de Nicaragua para Xiri.
+
+Incluye rutas gastronómicas secuenciales de punto A a punto B (ej. Ruta del Quesillo,
+Ruta del Vigorón, Ruta de la Fritanga, Ruta de las Rosquillas de Somoto, Ruta del Caribe).
 
 Uso:
     python manage.py seed_data
@@ -12,11 +15,11 @@ from django.db import transaction
 
 from users.models import User, VerificationRequest
 from gastronomy.models import Department, TraditionalFood, FoodCollection, GastronomicRoute
-from business.models import Business, BusinessMenuItem, BusinessQualification, RouteBusiness
+from business.models import Business, BusinessMenuItem, Menu, BusinessQualification, RouteBusiness
 
 
 class Command(BaseCommand):
-    help = 'Poblar la base de datos con datos de prueba auténticos de Nicaragua para Xiri'
+    help = 'Poblar la base de datos con datos de prueba auténticos de Nicaragua para Xiri con rutas detalladas'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -32,6 +35,7 @@ class Command(BaseCommand):
             BusinessQualification.objects.all().delete()
             FoodCollection.objects.all().delete()
             RouteBusiness.objects.all().delete()
+            Menu.objects.all().delete()
             BusinessMenuItem.objects.all().delete()
             Business.objects.all().delete()
             VerificationRequest.objects.all().delete()
@@ -44,78 +48,85 @@ class Command(BaseCommand):
         self.stdout.write('\n1. Creando departamentos de Nicaragua con coordenadas GPS...')
         departments = self.create_departments()
 
-        self.stdout.write('\n2. Creando platillos típicos tradicionales...')
+        self.stdout.write('\n2. Creando platillos típicos tradicionales nicaragüenses...')
         foods = self.create_traditional_foods(departments)
 
-        self.stdout.write('\n3. Creando usuarios de prueba (Admin, Dueños, Turistas)...')
+        self.stdout.write('\n3. Creando usuarios de prueba (Admin, Dueños de Negocios, Turistas)...')
         users = self.create_users()
 
-        self.stdout.write('\n4. Creando solicitudes de verificación...')
+        self.stdout.write('\n4. Creando solicitudes de verificación en distintos estados...')
         self.create_verification_requests(users)
 
-        self.stdout.write('\n5. Creando negocios representativos...')
+        self.stdout.write('\n5. Creando negocios emblemáticos ordenados por rutas geográficas...')
         businesses = self.create_businesses(users)
 
-        self.stdout.write('\n6. Creando platillos en el menú con precios...')
+        self.stdout.write('\n6. Creando platillos en el menú de cada negocio con precios...')
         self.create_menu_items(businesses, foods)
 
-        self.stdout.write('\n7. Creando rutas gastronómicas y asignando negocios...')
+        self.stdout.write('\n7. Creando rutas gastronómicas de punto A a punto B con paradas...')
         self.create_gastronomic_routes(departments, businesses)
 
         self.stdout.write('\n8. Creando calificaciones y reseñas con fotos de evidencia...')
         self.create_qualifications(users, businesses)
 
-        self.stdout.write('\n9. Creando colección de platillos y progreso del álbum...')
+        self.stdout.write('\n9. Creando colección de platillos y progreso del álbum digital...')
         self.create_food_collections(users, foods)
 
-        self.stdout.write(self.style.SUCCESS('\n======================================================'))
-        self.stdout.write(self.style.SUCCESS(' ¡Datos de prueba de Nicaragua cargados con éxito!'))
-        self.stdout.write(self.style.SUCCESS('======================================================'))
-        self.stdout.write('Cuentas creadas para testing:')
-        self.stdout.write('  - Admin:       admin@xiri.com      / admin1234 (Rol: admin)')
-        self.stdout.write('  - Dueño 1:     dueno@xiri.com      / dueno1234 (Rol: owner - Don Pedro)')
-        self.stdout.write('  - Dueña 2:     duena@xiri.com      / duena1234 (Rol: owner - Doña María)')
-        self.stdout.write('  - Turista:     turista@xiri.com    / turista1234 (Rol: user - Juan)')
-        self.stdout.write('  - Solicitante: solicitante@xiri.com / solicitante1234 (Rol: user - Carlos)')
-        self.stdout.write('======================================================\n')
+        self.stdout.write(self.style.SUCCESS('\n========================================================================================================'))
+        self.stdout.write(self.style.SUCCESS('                        🎉 ¡DATOS DE PRUEBA CARGADOS CON ÉXITO! 🎉'))
+        self.stdout.write(self.style.SUCCESS('========================================================================================================'))
+        self.stdout.write('  ℹ️  En la app móvil puedes ingresar con tu USUARIO (o CORREO) y tu CONTRASEÑA:\n')
+        self.stdout.write('  ┌──────────────────┬─────────────────┬──────────────────────┬──────────────────────┬─────────────────────────┐')
+        self.stdout.write('  │ ROL              │ USUARIO         │ CONTRASEÑA           │ CORREO               │ PERSONAJE / PROCESO     │')
+        self.stdout.write('  ├──────────────────┼─────────────────┼──────────────────────┼──────────────────────┼─────────────────────────┤')
+        self.stdout.write('  │ 👑 Admin         │ admin           │ admin1234            │ admin@xiri.com       │ Admin / Superusuario    │')
+        self.stdout.write('  │ 🏪 Dueño 1       │ don_pedro       │ dueno1234            │ dueno@xiri.com       │ Pedro (Dueño Nagarote)  │')
+        self.stdout.write('  │ 🏪 Dueña 2       │ dona_maria      │ duena1234            │ duena@xiri.com       │ María (Dueña Granada)   │')
+        self.stdout.write('  │ 🏪 Dueña 3       │ dona_vilma      │ duena1234            │ vilma@xiri.com       │ Vilma (Dueña Nagarote)  │')
+        self.stdout.write('  │ 🏪 Dueño 4       │ don_chepe       │ dueno1234            │ chepe@xiri.com       │ Chepe (Dueño Managua)   │')
+        self.stdout.write('  │ 🎒 Turista       │ turista_juan    │ turista1234          │ turista@xiri.com     │ Juan (Explorador álbum) │')
+        self.stdout.write('  │ 📝 Solicitante   │ carlos_aspira   │ solicitante1234      │ solicitante@xiri.com │ Carlos (Pide ser dueño) │')
+        self.stdout.write('  └──────────────────┴─────────────────┴──────────────────────┴──────────────────────┴─────────────────────────┘')
+        self.stdout.write('  * NOTA: Puedes escribir tanto el USUARIO como el CORREO en el primer campo del login.')
+        self.stdout.write(self.style.SUCCESS('========================================================================================================\n'))
 
     def create_departments(self):
-        """Crea los 17 departamentos/regiones de Nicaragua con datos limpios y coordenadas."""
+        """Crea los 17 departamentos/regiones de Nicaragua con coordenadas GPS auténticas."""
         departments_data = [
             {"name": "Boaco", "latitude": 12.4729, "longitude": -85.6604,
-             "description": "Tierra de encantadores paisajes montañosos, ganadería de altura y rica cuajada."},
+             "description": "Tierra de dos pisos con encantadores paisajes montañosos, ganadería de altura y rica cuajada."},
             {"name": "Carazo", "latitude": 11.9103, "longitude": -86.2102,
-             "description": "Famoso por su clima fresco, festividades de San Sebastián, ajiaco y dulces típicos."},
+             "description": "Famoso por su clima fresco, festividades de San Sebastián, ajiaco, masa de cazuela y dulces típicos."},
             {"name": "Chinandega", "latitude": 12.6298, "longitude": -87.1318,
-             "description": "Cálida tierra volcánica del pacífico norte, mariscos, caña y dulces tradicionales."},
+             "description": "Cálida tierra volcánica del pacífico norte, rica en mariscos, caña de azúcar y dulces tradicionales."},
             {"name": "Chontales", "latitude": 11.9385, "longitude": -85.1677,
-             "description": "Cuna ganadera de Nicaragua, famosa por sus quesillos, carnes y derivados lácteos."},
+             "description": "Cuna ganadera de Nicaragua, famosa por sus quesillos, carnes asadas y derivados lácteos."},
             {"name": "Estelí", "latitude": 13.0852, "longitude": -86.3533,
-             "description": "El diamante de las Segovias, famoso por sus puros, murales y desayunos norteños."},
+             "description": "El diamante de las Segovias, famoso por sus puros de tabaco, murales y desayunos norteños."},
             {"name": "Granada", "latitude": 11.9294, "longitude": -85.9566,
-             "description": "La Gran Sultana colonial a orillas del Gran Lago, cuna indiscutible del vigorón."},
+             "description": "La Gran Sultana colonial a orillas del Gran Lago de Nicaragua, cuna indiscutible del vigorón."},
             {"name": "Jinotega", "latitude": 13.1042, "longitude": -86.0024,
-             "description": "La ciudad de las brumas, cuna del mejor café de altura y deliciosas güirilas."},
+             "description": "La ciudad de las brumas, cuna del mejor café especial de altura y deliciosas güirilas de maíz tierno."},
             {"name": "León", "latitude": 12.4382, "longitude": -86.8784,
-             "description": "Ciudad universitaria y poética, hogar del nacatamal leones y quesillos en Nagarote."},
+             "description": "Ciudad universitaria y poética, hogar del nacatamal dominical y de la legendaria ruta de los quesillos."},
             {"name": "Madriz", "latitude": 13.3391, "longitude": -86.5204,
-             "description": "Hogar del imponente Cañón de Somoto y las inconfundibles rosquillas somoteñas."},
+             "description": "Hogar del imponente Cañón de Somoto y las inconfundibles rosquillas somoteñas de horno de leña."},
             {"name": "Managua", "latitude": 12.1150, "longitude": -86.2362,
-             "description": "La capital vibrante, famosa por sus fritangas nocturnas y vida gastronómica activa."},
+             "description": "La capital vibrante, famosa por sus fritangas nocturnas, asados al carbón y gran actividad culinaria."},
             {"name": "Masaya", "latitude": 11.9738, "longitude": -86.0964,
-             "description": "Capital del folclore nacional y artesanal, célebre por su sabroso vaho y cajetas."},
+             "description": "Capital del folclore nacional y artesanal, célebre por su sabroso vaho, montucas y cajetas de frutas."},
             {"name": "Matagalpa", "latitude": 12.9254, "longitude": -85.9189,
-             "description": "La perla del septentrión, tierra del indio viejo, café aromático y clima templado."},
+             "description": "La perla del septentrión, tierra del indio viejo tradicional, café aromático y clima templado."},
             {"name": "Nueva Segovia", "latitude": 13.6552, "longitude": -86.1184,
-             "description": "Pinorescas montañas fronterizas con rica herencia culinaria a base de maíz criollo."},
+             "description": "Montañas de pinares con rica herencia culinaria a base de maíz criollo, empanadas y atoles."},
             {"name": "Río San Juan", "latitude": 11.4088, "longitude": -84.8380,
-             "description": "Santuario tropical y fluvial, hogar del sábalo real y pescados de río y lago."},
+             "description": "Santuario tropical y fluvial, hogar del sábalo real, camarones de río y pescados de agua dulce."},
             {"name": "Rivas", "latitude": 11.4373, "longitude": -85.7136,
-             "description": "Encrucijada del istmo con playas de surf y rica tradición de mariscos y dulces."},
+             "description": "Encrucijada del istmo con playas de surf y rica tradición de mariscos frescos, cacao y dulces."},
             {"name": "Costa Caribe Norte", "latitude": 13.2541, "longitude": -84.8380,
-             "description": "Región autónoma de tradición miskita y mayangna, rica en plátanos verdes y coco."},
+             "description": "Región autónoma de tradición miskita y mayangna, rica en plátanos verdes, luk luk y coco."},
             {"name": "Costa Caribe Sur", "latitude": 12.1389, "longitude": -83.7030,
-             "description": "Tierra criolla y afrodescendiente en Bluefields, cuna del rondón, patí y pan de coco."},
+             "description": "Tierra criolla y afrodescendiente en Bluefields, cuna del rondón marinero, patí picante y pan de coco."},
         ]
 
         departments = {}
@@ -136,21 +147,21 @@ class Command(BaseCommand):
     def create_traditional_foods(self, departments):
         """Crea platillos típicos auténticos con su departamento de origen correcto."""
         foods_data = [
-            # Granada
-            {"name": "Vigorón Granadino", "department": "Granada",
-             "description": "Yuca cocida suave con chicharrón crocante de faja y ensalada de mamey y tomate en hoja de plátano.",
-             "cultural_origin": "Nacido en 1914 en Granada por la famosa 'Loca Ramona', símbolo gastronómico por excelencia.",
-             "image": "platillos/vigoron-mixto_web.jpg.webp"},
-
             # León
+            {"name": "Quesillo de Nagarote", "department": "León",
+             "description": "Tortilla caliente recién salida del comal con queso hilado tierno, cebollita encurtida en vinagre de guineo y abundante crema agria.",
+             "cultural_origin": "Platillo típico creado en Nagarote y La Paz Centro a mediados del siglo XX por vendedoras de trenes.",
+             "image": "platillos/quesillo.jpg"},
             {"name": "Nacatamal Leones", "department": "León",
              "description": "Masa de maíz criollo perfumada con achiote y manteca, rellena de cerdo marinado, arroz, papa y yerbabuena en hoja de chagüite.",
              "cultural_origin": "Platillo prehispánico perfeccionado en la época colonial, tradición de los domingos nicaragüenses.",
              "image": "platillos/nacatamal.avif"},
-            {"name": "Quesillo de Nagarote", "department": "León",
-             "description": "Tortilla caliente recién salida del comal con queso hilado tierno, cebollita encurtida en vinagre y abundante crema agria.",
-             "cultural_origin": "Platillo típico creado en Nagarote y La Paz Centro a mediados del siglo XX por vendedoras de trenes.",
-             "image": "platillos/quesillo.jpg"},
+
+            # Granada
+            {"name": "Vigorón Granadino", "department": "Granada",
+             "description": "Yuca cocida suave con chicharrón crocante de faja y ensalada de repollo con mamey y tomate en hoja de plátano.",
+             "cultural_origin": "Nacido en 1914 en Granada por la famosa 'Loca Ramona', símbolo gastronómico por excelencia.",
+             "image": "platillos/vigoron-mixto_web.jpg.webp"},
 
             # Masaya
             {"name": "Vaho Tradicional", "department": "Masaya",
@@ -172,17 +183,17 @@ class Command(BaseCommand):
              "cultural_origin": "Adaptación nicaragüense festiva de la paella española, infaltable en cumpleaños y celebraciones.",
              "image": "platillos/arroz-valen.jpeg"},
 
-            # Matagalpa
-            {"name": "Indio Viejo Matagalpino", "department": "Matagalpa",
-             "description": "Guiso de masa de maíz condimentado con yerbabuena, achiote, cebolla y carne de res deshilachada en naranja agria.",
-             "cultural_origin": "Plato prehispánico legendario de las tribus indígenas del norte de Nicaragua.",
-             "image": "platillos/indio.jpeg"},
-
             # Madriz
             {"name": "Rosquillas de Somoto", "department": "Madriz",
              "description": "Horneadas crocantes de masa de maíz selecto con cuajada fresca y queso seco de la más alta calidad.",
              "cultural_origin": "Reconocidas nacional e internacionalmente como el mayor orgullo culinario de Somoto.",
              "image": "platillos/tortillas.jpg"},
+
+            # Matagalpa
+            {"name": "Indio Viejo Matagalpino", "department": "Matagalpa",
+             "description": "Guiso de masa de maíz condimentado con yerbabuena, achiote, cebolla y carne de res deshilachada en naranja agria.",
+             "cultural_origin": "Plato prehispánico legendario de las tribus indígenas del norte de Nicaragua.",
+             "image": "platillos/indio.jpeg"},
 
             # Estelí
             {"name": "Desayuno Tres Golpes Norteño", "department": "Estelí",
@@ -204,12 +215,6 @@ class Command(BaseCommand):
              "cultural_origin": "Bocadillo caribeño tradicional de origen jamaiquino adaptado en la costa este.",
              "image": "platillos/pati.jpg"},
 
-            # Costa Caribe Norte
-            {"name": "Guabul Misquito", "department": "Costa Caribe Norte",
-             "description": "Bebida tradicional a base de plátano verde madurado cocido, leche de vaca y leche de coco.",
-             "cultural_origin": "Bebida típica cotidiana de la comunidad indígena miskita en Bilwi.",
-             "image": "platillos/guabul.webp"},
-
             # Chinandega
             {"name": "Pescado Frito Tipitapa", "department": "Chinandega",
              "description": "Pescado entero frito crocante bañado en una abundante salsa criolla de tomates frescos, cebolla y chiltoma.",
@@ -219,6 +224,12 @@ class Command(BaseCommand):
              "description": "Caldo enriquecido con masa y tortas fritas de queso seco, aromatizado con hierbabuena y cebolla.",
              "cultural_origin": "Platillo esencial de la Semana Santa y Cuaresma nicaragüense.",
              "image": "platillos/sopa-queso.jpg"},
+
+            # Costa Caribe Norte
+            {"name": "Guabul Misquito", "department": "Costa Caribe Norte",
+             "description": "Bebida tradicional a base de plátano verde madurado cocido, leche de vaca y leche de coco.",
+             "cultural_origin": "Bebida típica cotidiana de la comunidad indígena miskita en Bilwi.",
+             "image": "platillos/guabul.webp"},
 
             # Carazo
             {"name": "Cajetas de Leche y Frutas", "department": "Carazo",
@@ -306,6 +317,28 @@ class Command(BaseCommand):
                 "is_superuser": False,
             },
             {
+                "username": "dona_vilma",
+                "email": "vilma@xiri.com",
+                "password": "duena1234",
+                "first_name": "Vilma",
+                "last_name": "Ruiz",
+                "rol": "owner",
+                "contact_number": "+50585551111",
+                "is_staff": False,
+                "is_superuser": False,
+            },
+            {
+                "username": "don_chepe",
+                "email": "chepe@xiri.com",
+                "password": "dueno1234",
+                "first_name": "José",
+                "last_name": "Torres",
+                "rol": "owner",
+                "contact_number": "+50584442222",
+                "is_staff": False,
+                "is_superuser": False,
+            },
+            {
                 "username": "turista_juan",
                 "email": "turista@xiri.com",
                 "password": "turista1234",
@@ -350,7 +383,7 @@ class Command(BaseCommand):
             user.is_superuser = udata["is_superuser"]
             user.save()
             users[user.username] = user
-            self.stdout.write(f'  ✓ {user.username} ({user.rol}) -> {user.email}')
+            self.stdout.write(f'  ✓ Usuario: {user.username:<14} | Contraseña: {udata["password"]:<15} | Rol: {user.rol:<6} | Correo: {user.email}')
 
         return users
 
@@ -402,15 +435,18 @@ class Command(BaseCommand):
             self.stdout.write(f'  ✓ Solicitud: {req.business_name} [{req.state}]')
 
     def create_businesses(self, users):
-        """Crea negocios gastronómicos auténticos con coordenadas GPS reales."""
+        """Crea negocios auténticos con coordenadas GPS precisas organizadas a lo largo de rutas viales."""
         businesses_data = [
+            # ==========================================
+            # RUTA DEL QUESILLO (Carretera Nueva a León)
+            # ==========================================
             {
-                "name": "El Kiosko del Vigorón de Doña Vilma",
-                "contact_number": "+50589996666",
-                "address": "Costado Sur del Parque Central, Granada",
-                "latitude": Decimal("11.929800"),
-                "longitude": Decimal("-85.956000"),
-                "owner": users["dona_maria"],
+                "name": "Quesillos El Güiligüiste",
+                "contact_number": "+50588881111",
+                "address": "Km 40 Carretera Nueva a León, Nagarote",
+                "latitude": Decimal("12.264500"),
+                "longitude": Decimal("-86.611500"),
+                "owner": users["dona_vilma"],
             },
             {
                 "name": "Quesillos Mi Bohío Nagarote",
@@ -421,12 +457,96 @@ class Command(BaseCommand):
                 "owner": users["don_pedro"],
             },
             {
+                "name": "Quesillos Acadia La Paz Centro",
+                "contact_number": "+50588882222",
+                "address": "Km 56 Carretera Nueva a León, La Paz Centro",
+                "latitude": Decimal("12.339500"),
+                "longitude": Decimal("-86.674500"),
+                "owner": users["don_chepe"],
+            },
+            {
+                "name": "Quesillos y Dulces Doña Tania",
+                "contact_number": "+50588883333",
+                "address": "Km 58 Carretera Nueva a León, La Paz Centro",
+                "latitude": Decimal("12.344000"),
+                "longitude": Decimal("-86.679000"),
+                "owner": users["dona_maria"],
+            },
+
+            # ==========================================
+            # RUTA COLONIAL DEL VIGORÓN (Granada)
+            # ==========================================
+            {
+                "name": "El Kiosko del Vigorón de Doña Vilma",
+                "contact_number": "+50589996666",
+                "address": "Costado Sur del Parque Central, Granada",
+                "latitude": Decimal("11.929800"),
+                "longitude": Decimal("-85.956000"),
+                "owner": users["dona_vilma"],
+            },
+            {
+                "name": "Vigorón La Abuela de La Calzada",
+                "contact_number": "+50589991111",
+                "address": "Calle La Calzada, frente a Hotel Darío, Granada",
+                "latitude": Decimal("11.930500"),
+                "longitude": Decimal("-85.953500"),
+                "owner": users["dona_maria"],
+            },
+            {
+                "name": "Rincón Criollo del Malecón de Granada",
+                "contact_number": "+50589992222",
+                "address": "Paseo del Malecón, frente a Puerto Asese, Granada",
+                "latitude": Decimal("11.932000"),
+                "longitude": Decimal("-85.948000"),
+                "owner": users["don_chepe"],
+            },
+
+            # ==========================================
+            # RUTA DE LA FRITANGA MANAGÜENSE (Managua)
+            # ==========================================
+            {
                 "name": "Fritanga y Asados Managüenses",
                 "contact_number": "+50588887777",
                 "address": "Rotonda Bello Horizonte, 1 c. al sur, Managua",
                 "latitude": Decimal("12.146500"),
                 "longitude": Decimal("-86.230100"),
                 "owner": users["don_pedro"],
+            },
+            {
+                "name": "Asados y Fritanga El Bohemo",
+                "contact_number": "+50588884444",
+                "address": "Colonia Centroamérica, costado este del parque, Managua",
+                "latitude": Decimal("12.112000"),
+                "longitude": Decimal("-86.248000"),
+                "owner": users["don_chepe"],
+            },
+            {
+                "name": "Fritanga Doña Chepita de Linda Vista",
+                "contact_number": "+50588885555",
+                "address": "Semáforos de Linda Vista, 2 c. al norte, Managua",
+                "latitude": Decimal("12.155000"),
+                "longitude": Decimal("-86.301000"),
+                "owner": users["dona_vilma"],
+            },
+
+            # ==========================================
+            # RUTA DEL CAFÉ Y ROSQUILLAS (Madriz / Estelí)
+            # ==========================================
+            {
+                "name": "Café y Desayuno Campesino El Diamante",
+                "contact_number": "+50587771111",
+                "address": "Salida Norte de Estelí, Km 152 Panamericana",
+                "latitude": Decimal("13.098000"),
+                "longitude": Decimal("-86.357000"),
+                "owner": users["don_pedro"],
+            },
+            {
+                "name": "Taller Artesanal de Rosquillas Doña Vílchez",
+                "contact_number": "+50587772222",
+                "address": "Entrada a Somoto, Km 218 Panamericana Norte",
+                "latitude": Decimal("13.479000"),
+                "longitude": Decimal("-86.581000"),
+                "owner": users["dona_vilma"],
             },
             {
                 "name": "El Rincón de las Rosquillas Somoteñas",
@@ -437,12 +557,68 @@ class Command(BaseCommand):
                 "owner": users["dona_maria"],
             },
             {
+                "name": "Comedor Campestre El Cañón de Somoto",
+                "contact_number": "+50587773333",
+                "address": "Comunidad Sonís, Entrada al Cañón de Somoto",
+                "latitude": Decimal("13.468000"),
+                "longitude": Decimal("-86.645000"),
+                "owner": users["don_chepe"],
+            },
+
+            # ==========================================
+            # RUTA AFROCARIBEÑA Y DEL COCO (Bluefields)
+            # ==========================================
+            {
                 "name": "Sabor Caribeño y Rondón de Bluefields",
                 "contact_number": "+50588887777",
-                "address": "Barrio Punta Fría, frente al muelle, Bluefields",
+                "address": "Barrio Punta Fría, frente al muelle municipal, Bluefields",
                 "latitude": Decimal("12.013500"),
                 "longitude": Decimal("-83.763500"),
                 "owner": users["don_pedro"],
+            },
+            {
+                "name": "Miss Becca's Kitchen & Patí House",
+                "contact_number": "+50588886666",
+                "address": "Barrio Cotton Tree, calle principal, Bluefields",
+                "latitude": Decimal("12.011000"),
+                "longitude": Decimal("-83.765000"),
+                "owner": users["dona_maria"],
+            },
+            {
+                "name": "El Oasis Costeño Seafood",
+                "contact_number": "+50588888888",
+                "address": "Barrio Beholden, frente a la bahía, Bluefields",
+                "latitude": Decimal("12.008000"),
+                "longitude": Decimal("-83.768000"),
+                "owner": users["don_chepe"],
+            },
+
+            # ==========================================
+            # RUTA DE LAS BRUMAS Y GÜIRILAS (Matagalpa - Jinotega)
+            # ==========================================
+            {
+                "name": "Comedor El Indio Viejo Matagalpino",
+                "contact_number": "+50586661111",
+                "address": "Paseo Juan Pablo II, Matagalpa",
+                "latitude": Decimal("12.924000"),
+                "longitude": Decimal("-85.919000"),
+                "owner": users["don_pedro"],
+            },
+            {
+                "name": "Güirilas con Cuajada Las Brumas",
+                "contact_number": "+50586662222",
+                "address": "Km 140 Carretera Matagalpa a Jinotega",
+                "latitude": Decimal("13.015000"),
+                "longitude": Decimal("-85.965000"),
+                "owner": users["dona_vilma"],
+            },
+            {
+                "name": "El Mirador de Jinotega Café & Tradición",
+                "contact_number": "+50586663333",
+                "address": "Entrada sur a Jinotega, Mirador La Peña",
+                "latitude": Decimal("13.098000"),
+                "longitude": Decimal("-86.002000"),
+                "owner": users["dona_maria"],
             },
         ]
 
@@ -466,21 +642,92 @@ class Command(BaseCommand):
     def create_menu_items(self, businesses, foods):
         """Crea platillos en el menú de cada negocio con precios y variantes tradicionales."""
         menu_data = [
+            # Quesillos El Güiligüiste
+            {
+                "business": businesses["Quesillos El Güiligüiste"],
+                "name": "Quesillo Tradicional en Hoja",
+                "description": "El clásico quesillo nagaroteño en hoja de chagüite con cebolla encurtida artesanal y crema agria fresca.",
+                "price": Decimal("85.00"),
+                "image": "platillos/quesillo.jpg",
+                "traditional_food": foods.get("Quesillo de Nagarote"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Quesillos El Güiligüiste"],
+                "name": "Tiste Helado en Jícara Artesanal",
+                "description": "Maíz tostado molido finamente con cacao y especias, servido bien frío en jícara tradicional.",
+                "price": Decimal("35.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # Quesillos Mi Bohío
+            {
+                "business": businesses["Quesillos Mi Bohío Nagarote"],
+                "name": "Quesillo Doble Especial con Crema",
+                "description": "Porción generosa de queso hilado fresco con doble capa de crema agria espesa.",
+                "price": Decimal("95.00"),
+                "image": "platillos/quesillo.jpg",
+                "traditional_food": foods.get("Quesillo de Nagarote"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Quesillos Mi Bohío Nagarote"],
+                "name": "Fresco de Cacao con Leche",
+                "description": "Cacao nicaragüense auténtico molido con leche entera y canela.",
+                "price": Decimal("40.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # Quesillos Acadia
+            {
+                "business": businesses["Quesillos Acadia La Paz Centro"],
+                "name": "Quesillo de Comal La Paz Centro",
+                "description": "Tortilla de comal recién volteada con quesillo hilado caliente y vinagreta de cebollita picada.",
+                "price": Decimal("85.00"),
+                "image": "platillos/quesillo.jpg",
+                "traditional_food": foods.get("Quesillo de Nagarote"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Quesillos Acadia La Paz Centro"],
+                "name": "Cosa de Horno Pacence",
+                "description": "Pan dulce tradicional de maíz con queso horneado en comal de barro.",
+                "price": Decimal("45.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # Quesillos Doña Tania
+            {
+                "business": businesses["Quesillos y Dulces Doña Tania"],
+                "name": "Quesillo en Trenza Casero",
+                "description": "Queso tierno en trenza artesanal bañado con crema dulce o ácida a su gusto.",
+                "price": Decimal("90.00"),
+                "image": "platillos/quesillo.jpg",
+                "traditional_food": foods.get("Quesillo de Nagarote"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Quesillos y Dulces Doña Tania"],
+                "name": "Chicha de Maíz Helada",
+                "description": "Bebida fermentada dulce de maíz rosado con esencia de vainilla y frambuesa.",
+                "price": Decimal("30.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
             # El Kiosko del Vigorón
             {
                 "business": businesses["El Kiosko del Vigorón de Doña Vilma"],
                 "name": "Vigorón Clásico con Chicharrón de Faja",
                 "description": "Yuca fresca con chicharrón crujiente y ensalada de mamey servido en hoja de plátano.",
                 "price": Decimal("130.00"),
-                "image": "platillos/vigoron-mixto_web.jpg.webp",
-                "traditional_food": foods.get("Vigorón Granadino"),
-                "is_traditional_variant": True,
-            },
-            {
-                "business": businesses["El Kiosko del Vigorón de Doña Vilma"],
-                "name": "Vigorón Mixto (Chicharrón y Carne Frita)",
-                "description": "Nuestra versión especial combinando chicharrón de faja y trozos tiernos de carne frita.",
-                "price": Decimal("170.00"),
                 "image": "platillos/vigoron-mixto_web.jpg.webp",
                 "traditional_food": foods.get("Vigorón Granadino"),
                 "is_traditional_variant": True,
@@ -495,31 +742,42 @@ class Command(BaseCommand):
                 "is_traditional_variant": False,
             },
 
-            # Quesillos Mi Bohío
+            # Vigorón La Abuela
             {
-                "business": businesses["Quesillos Mi Bohío Nagarote"],
-                "name": "Quesillo en Hoja con Doble Crema",
-                "description": "Quesillo tradicional suave en hoja con cebolla encurtida y crema pura.",
-                "price": Decimal("85.00"),
-                "image": "platillos/quesillo.jpg",
-                "traditional_food": foods.get("Quesillo de Nagarote"),
+                "business": businesses["Vigorón La Abuela de La Calzada"],
+                "name": "Vigorón Mixto de Chicharrón y Carne",
+                "description": "Nuestra versión especial combinando chicharrón de faja y trozos tiernos de carne frita.",
+                "price": Decimal("170.00"),
+                "image": "platillos/vigoron-mixto_web.jpg.webp",
+                "traditional_food": foods.get("Vigorón Granadino"),
                 "is_traditional_variant": True,
             },
             {
-                "business": businesses["Quesillos Mi Bohío Nagarote"],
-                "name": "Tiste Helado en Jícara",
-                "description": "Bebida fría de maíz molido con cacao, canela y raspadura de hielo.",
-                "price": Decimal("40.00"),
-                "image": None,
+                "business": businesses["Vigorón La Abuela de La Calzada"],
+                "name": "Guapote sin Espinas en Salsa Criolla",
+                "description": "Pescado del Gran Lago frito y cubierto con cebolla y tomate salteados.",
+                "price": Decimal("280.00"),
+                "image": "platillos/images.jpeg",
                 "traditional_food": None,
                 "is_traditional_variant": False,
+            },
+
+            # Rincón Criollo del Malecón
+            {
+                "business": businesses["Rincón Criollo del Malecón de Granada"],
+                "name": "Vigorón Criollo Especial del Muelle",
+                "description": "Vigorón completo acompañado de chicharrón con carne y chilitos congo al gusto.",
+                "price": Decimal("150.00"),
+                "image": "platillos/vigoron-mixto_web.jpg.webp",
+                "traditional_food": foods.get("Vigorón Granadino"),
+                "is_traditional_variant": True,
             },
 
             # Fritanga Managüense
             {
                 "business": businesses["Fritanga y Asados Managüenses"],
                 "name": "Servicio de Carne Asada Completo",
-                "description": "Carne de res asada con gallopinto, tajadas fritas y queso asado o frito.",
+                "description": "Carne de res asada con gallopinto, tajadas verdes crocantes y queso frito nica.",
                 "price": Decimal("190.00"),
                 "image": "platillos/carne-asada.jpeg",
                 "traditional_food": foods.get("Fritanga Managüense"),
@@ -535,18 +793,100 @@ class Command(BaseCommand):
                 "is_traditional_variant": False,
             },
 
-            # El Rincón de las Rosquillas Somoteñas
+            # Asados El Bohemo
+            {
+                "business": businesses["Asados y Fritanga El Bohemo"],
+                "name": "Servicio de Cerdo Asado al Carbón",
+                "description": "Lomo de cerdo marinado con naranja agria, gallopinto montañero y tajadas fritas.",
+                "price": Decimal("180.00"),
+                "image": "platillos/carne-asada.jpeg",
+                "traditional_food": foods.get("Fritanga Managüense"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Asados y Fritanga El Bohemo"],
+                "name": "Maduro con Queso Frito",
+                "description": "Plátano maduro asado dulce con trozo generoso de queso criollo frito.",
+                "price": Decimal("60.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # Fritanga Doña Chepita
+            {
+                "business": businesses["Fritanga Doña Chepita de Linda Vista"],
+                "name": "Servicio de Pollo Asado Fritanguero",
+                "description": "Cuarto de pollo asado con chimichurri nica, gallopinto y tajadas verdes con ensalada.",
+                "price": Decimal("170.00"),
+                "image": "platillos/pollo-carbon.jpeg",
+                "traditional_food": foods.get("Pollo Asado al Carbón"),
+                "is_traditional_variant": True,
+            },
+
+            # Café El Diamante
+            {
+                "business": businesses["Café y Desayuno Campesino El Diamante"],
+                "name": "Desayuno Tres Golpes Norteño",
+                "description": "Huevos fritos, gallopinto norteño, tajadas y queso frito con tortilla de maíz recién hecha.",
+                "price": Decimal("140.00"),
+                "image": "platillos/tres-g.jpg",
+                "traditional_food": foods.get("Desayuno Tres Golpes Norteño"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Café y Desayuno Campesino El Diamante"],
+                "name": "Café Especial de Altura",
+                "description": "Café arábica de estricta altura cultivado en las montañas segovianas.",
+                "price": Decimal("35.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # Rosquillas Doña Vílchez
+            {
+                "business": businesses["Taller Artesanal de Rosquillas Doña Vílchez"],
+                "name": "Bolsa de Rosquillas Recién Horneadas",
+                "description": "Rosquillas tradicionales de maíz y cuajada cocidas a fuego lento en horno de barro.",
+                "price": Decimal("75.00"),
+                "image": "platillos/tortillas.jpg",
+                "traditional_food": foods.get("Rosquillas de Somoto"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Taller Artesanal de Rosquillas Doña Vílchez"],
+                "name": "Hojaldras Dulces de Somoto",
+                "description": "Hojaldras crujientes elaboradas con maíz dulce y panela.",
+                "price": Decimal("60.00"),
+                "image": "platillos/tortillas.jpg",
+                "traditional_food": foods.get("Rosquillas de Somoto"),
+                "is_traditional_variant": True,
+            },
+
+            # El Rincón de las Rosquillas
             {
                 "business": businesses["El Rincón de las Rosquillas Somoteñas"],
-                "name": "Bolsa de Rosquillas Tradicionales",
-                "description": "Bolsa familiar con 25 rosquillas crocantes elaboradas en horno de leña.",
+                "name": "Bolsa Familiar de Rosquillas Tradicionales",
+                "description": "Bolsa familiar con 25 rosquillas crocantes elaboradas con la receta centenaria.",
                 "price": Decimal("80.00"),
                 "image": "platillos/tortillas.jpg",
                 "traditional_food": foods.get("Rosquillas de Somoto"),
                 "is_traditional_variant": True,
             },
 
-            # Sabor Caribeño y Rondón
+            # Comedor El Cañón
+            {
+                "business": businesses["Comedor Campestre El Cañón de Somoto"],
+                "name": "Plato Típico Somoteño con Cuajada",
+                "description": "Carne cecina con gallopinto, cuajada fresca de hacienda, tortillas y café negro.",
+                "price": Decimal("160.00"),
+                "image": "platillos/carne-asada.jpeg",
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # Sabor Caribeño Bluefields
             {
                 "business": businesses["Sabor Caribeño y Rondón de Bluefields"],
                 "name": "Rondón Mixto de Langosta y Pescado",
@@ -556,13 +896,77 @@ class Command(BaseCommand):
                 "traditional_food": foods.get("Rondón de Mariscos Caribeño"),
                 "is_traditional_variant": True,
             },
+
+            # Miss Becca's
             {
-                "business": businesses["Sabor Caribeño y Rondón de Bluefields"],
-                "name": "Patí Criollo Especiado",
-                "description": "Empanada horneada caribeña con carne molida y toque de chile habanero.",
-                "price": Decimal("45.00"),
+                "business": businesses["Miss Becca's Kitchen & Patí House"],
+                "name": "Patí Bluefileño Especiado (2 unidades)",
+                "description": "Empanadas doradas con relleno de carne molida al estilo caribeño picante.",
+                "price": Decimal("80.00"),
                 "image": "platillos/pati.jpg",
                 "traditional_food": foods.get("Patí Bluefileño"),
+                "is_traditional_variant": True,
+            },
+            {
+                "business": businesses["Miss Becca's Kitchen & Patí House"],
+                "name": "Pan de Coco Horneado",
+                "description": "Bollo esponjoso amasado con leche de coco pura recién extraída.",
+                "price": Decimal("35.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # El Oasis Costeño
+            {
+                "business": businesses["El Oasis Costeño Seafood"],
+                "name": "Rondón Tradicional de Pescado Entero",
+                "description": "Receta ancestral con leche de coco, malanga, quequisque y pescado pargo rojo.",
+                "price": Decimal("280.00"),
+                "image": "platillos/RONDON.jpg",
+                "traditional_food": foods.get("Rondón de Mariscos Caribeño"),
+                "is_traditional_variant": True,
+            },
+
+            # Comedor El Indio Viejo
+            {
+                "business": businesses["Comedor El Indio Viejo Matagalpino"],
+                "name": "Cazuela de Indio Viejo Tradicional",
+                "description": "Masa de maíz criollo espesada con caldo de res, hierbabuena y naranja agria.",
+                "price": Decimal("150.00"),
+                "image": "platillos/indio.jpeg",
+                "traditional_food": foods.get("Indio Viejo Matagalpino"),
+                "is_traditional_variant": True,
+            },
+
+            # Güirilas Las Brumas
+            {
+                "business": businesses["Güirilas con Cuajada Las Brumas"],
+                "name": "Güirila Caliente con Cuajada Fresca",
+                "description": "Tortilla dulce de maíz tierno (choclo) asada en comal con una rueda de cuajada campesina y crema.",
+                "price": Decimal("95.00"),
+                "image": "platillos/tortillas.jpg",
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+            {
+                "business": businesses["Güirilas con Cuajada Las Brumas"],
+                "name": "Atol de Maíz Tierno Dulce",
+                "description": "Bebida caliente y cremosa de maíz tierno con canela en raja y leche.",
+                "price": Decimal("45.00"),
+                "image": None,
+                "traditional_food": None,
+                "is_traditional_variant": False,
+            },
+
+            # El Mirador de Jinotega
+            {
+                "business": businesses["El Mirador de Jinotega Café & Tradición"],
+                "name": "Montucas de Cerdo Norteñas",
+                "description": "Tamalitos norteños de maíz tierno rellenos de trocitos de cerdo sazonado.",
+                "price": Decimal("75.00"),
+                "image": "platillos/montuca.jpeg",
+                "traditional_food": foods.get("Montucas de Maíz"),
                 "is_traditional_variant": True,
             },
         ]
@@ -579,40 +983,88 @@ class Command(BaseCommand):
                     "is_traditional_variant": mitem["is_traditional_variant"],
                 }
             )
+            Menu.objects.update_or_create(
+                business=item.business,
+                menu_item=item,
+                defaults={"price": item.price}
+            )
             self.stdout.write(f'  ✓ Menú [{item.business.name}]: {item.name} - C$ {item.price}')
 
     def create_gastronomic_routes(self, departments, businesses):
-        """Crea rutas gastronómicas y asocia los negocios ordenados."""
+        """Crea rutas gastronómicas secuenciales de punto A a punto B con paradas ordenadas."""
         routes_data = [
+            # 1. RUTA DEL QUESILLO
             {
-                "name": "Ruta Colonial y del Vigorón",
-                "department": departments["Granada"],
-                "description": "Recorrido por el Parque Central y calles coloniales saboreando el auténtico vigorón granadino.",
-                "businesses": [businesses["El Kiosko del Vigorón de Doña Vilma"]],
-            },
-            {
-                "name": "Ruta de los Quesillos de Occidente",
+                "name": "Ruta del Quesillo: De Managua a León por Carretera Nueva",
                 "department": departments["León"],
-                "description": "Travesía por la carretera hacia León disfrutando el suave quesillo en hoja caliente.",
-                "businesses": [businesses["Quesillos Mi Bohío Nagarote"]],
+                "description": "La travesía quesillera más icónica de Nicaragua. Recorre la Carretera Nueva a León descubriendo cómo varía el toque de la cebollita, la crema y el queso de Nagarote a La Paz Centro.",
+                "businesses": [
+                    businesses["Quesillos El Güiligüiste"],
+                    businesses["Quesillos Mi Bohío Nagarote"],
+                    businesses["Quesillos Acadia La Paz Centro"],
+                    businesses["Quesillos y Dulces Doña Tania"],
+                ],
             },
+
+            # 2. RUTA DEL VIGORÓN
             {
-                "name": "Ruta de las Fritangas Capitalinas",
+                "name": "Ruta Colonial del Vigorón: El Sendero Granadino",
+                "department": departments["Granada"],
+                "description": "Camino peatonal y colonial desde el Parque Central hasta el Muelle del Gran Lago. Degusta las diferentes recetas de vigorón con chicharrón de faja y ensalada fresca.",
+                "businesses": [
+                    businesses["El Kiosko del Vigorón de Doña Vilma"],
+                    businesses["Vigorón La Abuela de La Calzada"],
+                    businesses["Rincón Criollo del Malecón de Granada"],
+                ],
+            },
+
+            # 3. RUTA DE LA FRITANGA
+            {
+                "name": "Ruta Nocturna de la Fritanga Managüense",
                 "department": departments["Managua"],
-                "description": "Tarde y noche gastronómica descubriendo el sabor de los mejores asados de Managua.",
-                "businesses": [businesses["Fritanga y Asados Managüenses"]],
+                "description": "Un tour nocturno por los barrios de la capital degustando la auténtica carne asada con tajadas, queso frito y gallopinto al carbón.",
+                "businesses": [
+                    businesses["Fritanga y Asados Managüenses"],
+                    businesses["Asados y Fritanga El Bohemo"],
+                    businesses["Fritanga Doña Chepita de Linda Vista"],
+                ],
             },
+
+            # 4. RUTA DE LAS ROSQUILLAS Y CAFÉ
             {
-                "name": "Ruta del Maíz y las Rosquillas de Altura",
+                "name": "Ruta Panamericana del Café y las Rosquillas Somoteñas",
                 "department": departments["Madriz"],
-                "description": "Paseo por Somoto con degustación de rosquillas recién horneadas y café segoviano.",
-                "businesses": [businesses["El Rincón de las Rosquillas Somoteñas"]],
+                "description": "Viaje norteño por la Carretera Panamericana desde los cafetales de Estelí hasta los legendarios hornos de barro de Somoto y el Cañón.",
+                "businesses": [
+                    businesses["Café y Desayuno Campesino El Diamante"],
+                    businesses["Taller Artesanal de Rosquillas Doña Vílchez"],
+                    businesses["El Rincón de las Rosquillas Somoteñas"],
+                    businesses["Comedor Campestre El Cañón de Somoto"],
+                ],
             },
+
+            # 5. RUTA DEL CARIBE
             {
-                "name": "Ruta Afrocaribeña y del Coco",
+                "name": "Ruta Afrocaribeña del Rondón y el Coco en Bluefields",
                 "department": departments["Costa Caribe Sur"],
-                "description": "Experiencia costeña al ritmo del palo de mayo con rondón de mariscos y patí.",
-                "businesses": [businesses["Sabor Caribeño y Rondón de Bluefields"]],
+                "description": "Inmersión cultural por los barrios costeros de Bluefields con paradas obligatorias para probar rondón de langosta y pescado, patí especiado y pan de coco.",
+                "businesses": [
+                    businesses["Sabor Caribeño y Rondón de Bluefields"],
+                    businesses["Miss Becca's Kitchen & Patí House"],
+                    businesses["El Oasis Costeño Seafood"],
+                ],
+            },
+
+            # 6. RUTA DE LAS GÜIRILAS Y MAÍZ
+            {
+                "name": "Ruta de las Brumas, Güirilas y el Maíz Norteño",
+                "department": departments["Matagalpa"],
+                "description": "Travesía panorámica entre las montañas de Matagalpa y Jinotega deleitándote con güirilas calientes, cuajada fresca y atoles de maíz tierno.",
+                "businesses": [
+                    businesses["Comedor El Indio Viejo Matagalpino"],
+                    businesses["Güirilas con Cuajada Las Brumas"],
+                    businesses["El Mirador de Jinotega Café & Tradición"],
+                ],
             },
         ]
 
@@ -624,7 +1076,7 @@ class Command(BaseCommand):
                     "description": rdata["description"],
                 }
             )
-            self.stdout.write(f'  ✓ Ruta: {route.name} ({route.department.name})')
+            self.stdout.write(f'\n  ✓ Ruta: {route.name} ({route.department.name})')
 
             for order, biz in enumerate(rdata["businesses"], start=1):
                 RouteBusiness.objects.update_or_create(
@@ -632,11 +1084,32 @@ class Command(BaseCommand):
                     business=biz,
                     defaults={"suggested_order": order}
                 )
-                self.stdout.write(f'     ↳ Negocio #{order}: {biz.name}')
+                self.stdout.write(f'     ↳ Parada #{order}: {biz.name} ({biz.address})')
 
     def create_qualifications(self, users, businesses):
         """Crea calificaciones y reseñas con fotos de evidencia para probar el cálculo de ratings."""
         qualifications_data = [
+            {
+                "user": users["turista_juan"],
+                "business": businesses["Quesillos El Güiligüiste"],
+                "qualification": 5,
+                "comment": "¡Parada obligatoria de toda la vida! El quesillo en hoja con cebollita es inigualable.",
+                "evidence_image": "reviews/evidence/evidence_sample.jpg",
+            },
+            {
+                "user": users["turista_juan"],
+                "business": businesses["Quesillos Mi Bohío Nagarote"],
+                "qualification": 5,
+                "comment": "Riquísimo quesillo, la crema es súper espesa y el queso suave y calientito.",
+                "evidence_image": "reviews/evidence/evidence_sample.jpg",
+            },
+            {
+                "user": users["carlos_aspira"],
+                "business": businesses["Quesillos Acadia La Paz Centro"],
+                "qualification": 4,
+                "comment": "Buen quesillo al estilo La Paz Centro, tortilla recién hecha y excelente tiste.",
+                "evidence_image": "reviews/evidence/evidence_sample.jpg",
+            },
             {
                 "user": users["turista_juan"],
                 "business": businesses["El Kiosko del Vigorón de Doña Vilma"],
@@ -645,17 +1118,31 @@ class Command(BaseCommand):
                 "evidence_image": "reviews/evidence/evidence_sample.jpg",
             },
             {
-                "user": users["turista_juan"],
-                "business": businesses["Quesillos Mi Bohío Nagarote"],
+                "user": users["carlos_aspira"],
+                "business": businesses["Vigorón La Abuela de La Calzada"],
                 "qualification": 5,
-                "comment": "Riquísimo quesillo, la crema es súper espesa y el queso suave y caliente.",
+                "comment": "Excelente ambiente en La Calzada y el vigorón mixto tiene un sabor espectacular.",
+                "evidence_image": "reviews/evidence/evidence_sample.jpg",
+            },
+            {
+                "user": users["turista_juan"],
+                "business": businesses["Fritanga y Asados Managüenses"],
+                "qualification": 4,
+                "comment": "Buena porción de carne asada y el gallopinto excelente. Servicio rápido y alegre.",
+                "evidence_image": "reviews/evidence/evidence_sample.jpg",
+            },
+            {
+                "user": users["turista_juan"],
+                "business": businesses["El Rincón de las Rosquillas Somoteñas"],
+                "qualification": 5,
+                "comment": "Las rosquillas de Somoto son oro puro. Llegaron calientitas con un café delicioso.",
                 "evidence_image": "reviews/evidence/evidence_sample.jpg",
             },
             {
                 "user": users["carlos_aspira"],
-                "business": businesses["Fritanga y Asados Managüenses"],
-                "qualification": 4,
-                "comment": "Buena porción de carne asada y el gallopinto excelente. Servicio rápido.",
+                "business": businesses["Taller Artesanal de Rosquillas Doña Vílchez"],
+                "qualification": 5,
+                "comment": "Ver cómo las hornean a leña le da un sabor único. Compré 4 bolsas para llevar.",
                 "evidence_image": "reviews/evidence/evidence_sample.jpg",
             },
             {
@@ -663,6 +1150,20 @@ class Command(BaseCommand):
                 "business": businesses["Sabor Caribeño y Rondón de Bluefields"],
                 "qualification": 5,
                 "comment": "El rondón de langosta es de otro mundo, el sabor a leche de coco natural es inigualable.",
+                "evidence_image": "reviews/evidence/evidence_sample.jpg",
+            },
+            {
+                "user": users["carlos_aspira"],
+                "business": businesses["Miss Becca's Kitchen & Patí House"],
+                "qualification": 5,
+                "comment": "El mejor patí picante de Bluefields. La masa hojaldrada es crujiente y deliciosa.",
+                "evidence_image": "reviews/evidence/evidence_sample.jpg",
+            },
+            {
+                "user": users["turista_juan"],
+                "business": businesses["Güirilas con Cuajada Las Brumas"],
+                "qualification": 5,
+                "comment": "Comer una güirila calientita con cuajada viendo la neblina de Matagalpa a Jinotega no tiene precio.",
                 "evidence_image": "reviews/evidence/evidence_sample.jpg",
             },
         ]
@@ -686,9 +1187,13 @@ class Command(BaseCommand):
             {"food": foods.get("Vigorón Granadino"), "complete": True},
             {"food": foods.get("Quesillo de Nagarote"), "complete": True},
             {"food": foods.get("Rondón de Mariscos Caribeño"), "complete": True},
+            {"food": foods.get("Patí Bluefileño"), "complete": True},
+            {"food": foods.get("Rosquillas de Somoto"), "complete": True},
+            {"food": foods.get("Fritanga Managüense"), "complete": True},
             {"food": foods.get("Nacatamal Leones"), "complete": False},
-            {"food": foods.get("Rosquillas de Somoto"), "complete": False},
             {"food": foods.get("Indio Viejo Matagalpino"), "complete": False},
+            {"food": foods.get("Desayuno Tres Golpes Norteño"), "complete": False},
+            {"food": foods.get("Vaho Tradicional"), "complete": False},
         ]
 
         for cdata in collections_data:
@@ -698,5 +1203,5 @@ class Command(BaseCommand):
                     traditional_food=cdata["food"],
                     defaults={"complete": cdata["complete"]}
                 )
-                estado = "Completado/Desbloqueado" if cdata["complete"] else "Pendiente"
+                estado = "Completado/Desbloqueado ⭐" if cdata["complete"] else "Pendiente"
                 self.stdout.write(f'  ✓ Colección [{turista.username}]: {cdata["food"].name} -> {estado}')

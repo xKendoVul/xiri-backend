@@ -149,15 +149,17 @@ python manage.py seed_data
 python manage.py create_test_users
 ```
 
-**Usuarios de prueba creados:**
+**Usuarios de prueba disponibles (puedes ingresar con Usuario o con Correo):**
 
-| Usuario | Contraseña | Rol |
-|---------|------------|-----|
-| admin | admin123 | Admin |
-| user1 | user123 | User |
-| user2 | user123 | User |
-| owner1 | owner123 | Owner |
-| owner2 | owner123 | Owner |
+| Rol | Usuario (Username) | Contraseña (Password) | Correo (Email) | Propósito / Personaje |
+|---|---|---|---|---|
+| **Administrador** | `admin` | `admin1234` | `admin@xiri.com` | Panel Admin / Verificaciones |
+| **Dueño de Local** | `don_pedro` | `dueno1234` | `dueno@xiri.com` | Don Pedro (Quesillos Nagarote) |
+| **Dueña de Local** | `dona_maria` | `duena1234` | `duena@xiri.com` | Doña María (Vigorón Granada) |
+| **Dueña de Local** | `dona_vilma` | `duena1234` | `vilma@xiri.com` | Doña Vilma (Quesillos La Paz Centro) |
+| **Dueño de Local** | `don_chepe` | `dueno1234` | `chepe@xiri.com` | Don Chepe (Fritanga Managua) |
+| **Turista** | `turista_juan` | `turista1234` | `turista@xiri.com` | Juan Pérez (Explorador / Colección) |
+| **Solicitante** | `carlos_aspira` | `solicitante1234` | `solicitante@xiri.com` | Carlos (Solicitud de dueño pendiente) |
 
 ### 3. Iniciar el servidor
 

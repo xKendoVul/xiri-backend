@@ -40,6 +40,11 @@ class BusinessViewSet(viewsets.ModelViewSet):
         if owner_filter == 'me':
             return queryset.filter(owner=user)
 
+        # Filtro por platillo tradicional asociado
+        traditional_food_id = self.request.query_params.get('traditional_food')
+        if traditional_food_id:
+            queryset = queryset.filter(menu_items__traditional_food_id=traditional_food_id).distinct()
+
         if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
             return queryset
 
@@ -96,7 +101,21 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
         if business and business.owner != self.request.user:
             if self.request.user.rol != 'admin' and not self.request.user.is_superuser:
                 raise PermissionDenied("Solo puedes agregar platillos a tus propios negocios")
-        serializer.save()
+        item = serializer.save()
+        # Sincronizar automáticamente con la tabla Menu
+        Menu.objects.update_or_create(
+            business=item.business,
+            menu_item=item,
+            defaults={'price': item.price}
+        )
+
+    def perform_update(self, serializer):
+        item = serializer.save()
+        Menu.objects.update_or_create(
+            business=item.business,
+            menu_item=item,
+            defaults={'price': item.price}
+        )
 
     def get_queryset(self):
         user = self.request.user
@@ -105,7 +124,12 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
         if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
             business_id = self.request.query_params.get('business')
             if business_id:
-                return queryset.filter(business_id=business_id)
+                queryset = queryset.filter(business_id=business_id)
+
+            traditional_food_id = self.request.query_params.get('traditional_food')
+            if traditional_food_id:
+                queryset = queryset.filter(traditional_food_id=traditional_food_id)
+
             return queryset
 
         if user.is_superuser or user.rol == 'admin':

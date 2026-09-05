@@ -5,12 +5,14 @@ from .models import Business, BusinessQualification, Menu, RouteBusiness, Busine
 class BusinessSerializer(serializers.ModelSerializer):
     """Serializer para negocios."""
     owner_name = serializers.CharField(source='owner.username', read_only=True)
+    average_rating = serializers.FloatField(read_only=True, default=0.0)
+    total_reviews = serializers.IntegerField(read_only=True, default=0)
     
     class Meta:
         model = Business
         fields = ['id', 'name', 'address', 'contact_number', 'latitude', 'longitude',
-                  'owner', 'owner_name', 'created_at']
-        read_only_fields = ['owner', 'created_at']
+                  'owner', 'owner_name', 'average_rating', 'total_reviews', 'created_at']
+        read_only_fields = ['owner', 'created_at', 'average_rating', 'total_reviews']
 
     def update(self, instance, validated_data):
         """Permitir actualización parcial de campos."""
@@ -24,13 +26,14 @@ class BusinessMenuItemSerializer(serializers.ModelSerializer):
     """Serializer para platillos del menú de un negocio."""
     counts_for_album = serializers.BooleanField(read_only=True)
     business_name = serializers.CharField(source='business.name', read_only=True)
+    business_address = serializers.CharField(source='business.address', read_only=True)
     traditional_food_name = serializers.CharField(source='traditional_food.name', read_only=True)
     
     class Meta:
         model = BusinessMenuItem
         fields = ['id', 'name', 'description', 'price', 'image', 'business', 'business_name',
-                  'traditional_food', 'traditional_food_name', 'is_traditional_variant', 
-                  'counts_for_album', 'created_at']
+                  'business_address', 'traditional_food', 'traditional_food_name',
+                  'is_traditional_variant', 'counts_for_album', 'created_at']
         read_only_fields = ['created_at']
 
 
