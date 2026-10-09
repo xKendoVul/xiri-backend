@@ -1,13 +1,15 @@
 from django.contrib.auth import PermissionDenied
 from rest_framework import viewsets, status
-from django.db import models
+from django.db import models, transaction
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django.db.models import Avg, Count
 
 from users.permissions import IsAdminUserRole, IsOwnerOrAdmin
+from users.models import User
 from .models import Business, BusinessQualification, Menu, RouteBusiness, BusinessMenuItem
 from gastronomy.models import FoodCollection
 from .serializers import (
@@ -32,7 +34,7 @@ class BusinessViewSet(viewsets.ModelViewSet):
 
         queryset = Business.objects.select_related('owner').annotate(
             average_rating=Avg('businessqualification__qualification'),
-            total_reviews=Count('businessqualification')
+            total_reviews=Count('businessqualification', distinct=True)
         )
 
         # Filtro para que el owner vea solo sus negocios
@@ -77,13 +79,9 @@ class BusinessViewSet(viewsets.ModelViewSet):
         # Campos permitidos para actualizar
         allowed_fields = ['contact_number', 'latitude', 'longitude']
         
-        for field in allowed_fields:
-            if field in request.data:
-                setattr(business, field, request.data[field])
-        
-        business.save()
-        
-        serializer = BusinessSerializer(business)
+        serializer = self.get_serializer(business, data={key: request.data[key] for key in allowed_fields if key in request.data}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response({
             "mensaje": "Perfil del negocio completado",
             "data": serializer.data
@@ -96,6 +94,7 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
     serializer_class = BusinessMenuItemSerializer
     permission_classes = [IsOwnerOrAdmin]
 
+    @transaction.atomic
     def perform_create(self, serializer):
         business = serializer.validated_data.get('business')
         if business and business.owner != self.request.user:
@@ -109,8 +108,12 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
             defaults={'price': item.price}
         )
 
+    @transaction.atomic
     def perform_update(self, serializer):
+        old_business_id = serializer.instance.business_id
         item = serializer.save()
+        if old_business_id != item.business_id:
+            Menu.objects.filter(menu_item=item, business_id=old_business_id).delete()
         Menu.objects.update_or_create(
             business=item.business,
             menu_item=item,
@@ -155,22 +158,14 @@ class BusinessMenuItemViewSet(viewsets.ModelViewSet):
             )
         
         menu_item = self.get_object()
+        data = {'is_traditional_variant': True}
+        if 'traditional_food' in request.data:
+            data['traditional_food'] = request.data['traditional_food']
+        serializer = self.get_serializer(menu_item, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'mensaje': 'Item validado para el álbum', 'data': serializer.data}, status=status.HTTP_200_OK)
         
-        # Marcar como variante tradicional
-        menu_item.is_traditional_variant = True
-        
-        # Si se proporciona un traditional_food, asociarlo
-        traditional_food_id = request.data.get('traditional_food')
-        if traditional_food_id:
-            menu_item.traditional_food_id = traditional_food_id
-        
-        menu_item.save()
-        
-        serializer = BusinessMenuItemSerializer(menu_item)
-        return Response({
-            "mensaje": "Item validado para el álbum",
-            "data": serializer.data
-        }, status=status.HTTP_200_OK)
 
 
 class MenuViewSet(viewsets.ModelViewSet):
@@ -179,6 +174,7 @@ class MenuViewSet(viewsets.ModelViewSet):
     serializer_class = MenuSerializer
     permission_classes = [IsOwnerOrAdmin]
 
+    @transaction.atomic
     def perform_create(self, serializer):
         business = serializer.validated_data.get('business')
         if business and business.owner != self.request.user:
@@ -193,8 +189,9 @@ class MenuViewSet(viewsets.ModelViewSet):
         business_id = self.request.query_params.get('business')
         if business_id:
             queryset = queryset.filter(business_id=business_id)
-            return queryset
 
+        if self.request.method in ('GET', 'HEAD', 'OPTIONS') and business_id:
+            return queryset
         if user.is_superuser or user.rol == 'admin':
             return queryset
         return queryset.filter(business__owner=user)
@@ -210,8 +207,11 @@ class BusinessQualificationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         business_id = self.request.query_params.get('business')
 
-        if business_id:
-            return BusinessQualification.objects.filter(business_id=business_id)
+        if business_id and self.request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return BusinessQualification.objects.select_related('user', 'business').filter(business_id=business_id)
+
+        if self.request.method not in ('GET', 'HEAD', 'OPTIONS') and not (user.is_superuser or user.rol == 'admin'):
+            return BusinessQualification.objects.filter(user=user)
 
         if user.is_superuser or user.rol == 'admin':
             return BusinessQualification.objects.select_related('user', 'business').all()
@@ -219,7 +219,11 @@ class BusinessQualificationViewSet(viewsets.ModelViewSet):
             models.Q(user=user) | models.Q(business__owner=user)
         )
 
+    @transaction.atomic
     def perform_create(self, serializer):
+        User.objects.select_for_update().get(pk=self.request.user.pk)
+        if BusinessQualification.objects.filter(user=self.request.user, business=serializer.validated_data['business']).exists():
+            raise ValidationError({'business': 'Ya calificaste este negocio'})
         qualification = serializer.save(user=self.request.user)
         user = self.request.user
         business = qualification.business

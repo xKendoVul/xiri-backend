@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db import transaction
 
 from .models import Business, BusinessQualification, Menu, RouteBusiness, BusinessMenuItem
 
@@ -29,6 +30,17 @@ class BusinessMenuItemSerializer(serializers.ModelSerializer):
     business_address = serializers.CharField(source='business.address', read_only=True)
     traditional_food_name = serializers.CharField(source='traditional_food.name', read_only=True)
     
+    def validate(self, attrs):
+        user = self.context['request'].user
+        business = attrs.get('business', getattr(self.instance, 'business', None))
+        if business and business.owner_id != user.pk and not (user.is_superuser or user.rol == 'admin'):
+            raise serializers.ValidationError({'business': 'Solo puedes usar tus propios negocios'})
+        if 'is_traditional_variant' in attrs and not (user.is_superuser or user.rol == 'admin'):
+            current = self.instance.is_traditional_variant if self.instance else False
+            if attrs['is_traditional_variant'] != current:
+                raise serializers.ValidationError({'is_traditional_variant': 'Solo administradores pueden validar variantes'})
+        return attrs
+
     class Meta:
         model = BusinessMenuItem
         fields = ['id', 'name', 'description', 'price', 'image', 'business', 'business_name',
@@ -42,6 +54,30 @@ class MenuSerializer(serializers.ModelSerializer):
     menu_item_name = serializers.CharField(source='menu_item.name', read_only=True)
     business_name = serializers.CharField(source='business.name', read_only=True)
     
+    def validate(self, attrs):
+        user = self.context['request'].user
+        business = attrs.get('business', getattr(self.instance, 'business', None))
+        item = attrs.get('menu_item', getattr(self.instance, 'menu_item', None))
+        if business and business.owner_id != user.pk and not (user.is_superuser or user.rol == 'admin'):
+            raise serializers.ValidationError({'business': 'Solo puedes usar tus propios negocios'})
+        if item and business and item.business_id != business.pk:
+            raise serializers.ValidationError({'menu_item': 'El platillo no pertenece a este negocio'})
+        if attrs.get('price', 0) < 0:
+            raise serializers.ValidationError({'price': 'El precio no puede ser negativo'})
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        menu = super().create(validated_data)
+        BusinessMenuItem.objects.filter(pk=menu.menu_item_id).update(price=menu.price)
+        return menu
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        menu = super().update(instance, validated_data)
+        BusinessMenuItem.objects.filter(pk=menu.menu_item_id).update(price=menu.price)
+        return menu
+
     class Meta:
         model = Menu
         fields = ['id', 'business', 'business_name', 'menu_item', 'menu_item_name', 'price']
@@ -55,6 +91,16 @@ class BusinessQualificationSerializer(serializers.ModelSerializer):
         model = BusinessQualification
         fields = ['id', 'user', 'username', 'business', 'qualification', 'comment', 'evidence_image', 'creation_date']
         read_only_fields = ['user', 'creation_date']
+
+    def validate(self, attrs):
+        user = self.context['request'].user if self.instance is None else self.instance.user
+        business = attrs.get('business', getattr(self.instance, 'business', None))
+        existing = BusinessQualification.objects.filter(user=user, business=business)
+        if self.instance:
+            existing = existing.exclude(pk=self.instance.pk)
+        if existing.exists():
+            raise serializers.ValidationError({'business': 'Ya calificaste este negocio'})
+        return attrs
 
     def validate_qualification(self, value):
         if value < 1 or value > 5:

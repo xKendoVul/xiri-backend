@@ -1,5 +1,7 @@
 # 🍽️ Xiri Backend
 
+Guía de despliegue manual: [DEPLOYMENT.md](DEPLOYMENT.md).
+
 Backend API para aplicación móvil de turismo gastronómico en Nicaragua, gamificada tipo álbum de coleccionable.
 
 ![Django](https://img.shields.io/badge/Django-6.0-green)
@@ -200,9 +202,9 @@ El servidor estará disponible en: **http://localhost:8000**
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET/POST | `/api/users/verification-requests/` | Solicitudes |
-| POST | `/api/users/verification-requests/{id}/approve/` | Aprobar (admin) |
-| POST | `/api/users/verification-requests/{id}/reject/` | Rechazar (admin) |
+| GET/POST | `/api/auth/verification-requests/` | Solicitudes |
+| POST | `/api/auth/verification-requests/{id}/approve/` | Aprobar (admin) |
+| POST | `/api/auth/verification-requests/{id}/reject/` | Rechazar (admin) |
 
 ---
 

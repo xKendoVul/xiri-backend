@@ -7,7 +7,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all(), message="Este correo ya esta registrado")]
+        validators=[UniqueValidator(queryset=User.objects.all(), lookup='iexact', message="Este correo ya esta registrado")]
     )
 
     class Meta:

@@ -8,7 +8,7 @@ from .serializers import UserRegisterSerializer, VerificationRequestSerializer
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db import transaction
 
-from .models import VerificationRequest
+from .models import VerificationRequest, User
 from business.models import Business
 
 class RegisterViewSet(viewsets.ViewSet):
@@ -62,12 +62,14 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
         if user.rol in ['owner', 'admin'] and not user.is_superuser:
             raise ValidationError({"error": "Ya posees un rol de admin o administrador"})
 
-        if VerificationRequest.objects.filter(user=user, state='pending').exists():
-            raise ValidationError({"error": "ya tienes una solicitud de verificacion en revision"})
-
-        serializer.save(user=user)
+        with transaction.atomic():
+            User.objects.select_for_update().get(pk=user.pk)
+            if VerificationRequest.objects.filter(user=user, state='pending').exists():
+                raise ValidationError({'error': 'ya tienes una solicitud de verificacion en revision'})
+            serializer.save(user=user)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @transaction.atomic
     def approve(self, request, pk=None):
         """
         Aprobar una solicitud de verificación.
@@ -87,6 +89,7 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
             )
         
         verification_request = self.get_object()
+        verification_request = VerificationRequest.objects.select_for_update().get(pk=verification_request.pk)
         
         if verification_request.state != 'pending':
             return Response(
@@ -115,13 +118,14 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
             verification_request.check_by = request.user
             verification_request.save()
         
-        serializer = VerificationRequestSerializer(verification_request)
+        serializer = self.get_serializer(verification_request)
         return Response({
             "mensaje": "Solicitud aprobada exitosamente",
             "data": serializer.data
         }, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @transaction.atomic
     def reject(self, request, pk=None):
         """
         Rechazar una solicitud de verificación.
@@ -137,6 +141,7 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
             )
         
         verification_request = self.get_object()
+        verification_request = VerificationRequest.objects.select_for_update().get(pk=verification_request.pk)
         
         if verification_request.state != 'pending':
             return Response(
@@ -151,7 +156,7 @@ class VerificationRequestViewSet(viewsets.ModelViewSet):
         verification_request.reviews = reviews
         verification_request.save()
         
-        serializer = VerificationRequestSerializer(verification_request)
+        serializer = self.get_serializer(verification_request)
         return Response({
             "mensaje": "Solicitud rechazada",
             "data": serializer.data

@@ -5,12 +5,12 @@
 __pycache__
 media
 
-__init__.py
 
-migrations
 
 .env
 /venv
+/env
+/staticfiles
 
 # Visual Studio Code #
 .vscode/*
